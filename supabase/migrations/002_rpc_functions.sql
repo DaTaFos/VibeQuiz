@@ -67,7 +67,8 @@ begin
 end;
 $$;
 
-grant execute on function create_room to authenticated;
+revoke execute on function create_room(uuid) from public;
+grant execute on function create_room(uuid) to authenticated;
 
 -- ============================================================
 -- FUNCTION: join_room
@@ -117,7 +118,8 @@ begin
 end;
 $$;
 
-grant execute on function join_room to anon;
+revoke execute on function join_room(char(6), text, text) from public;
+grant execute on function join_room(char(6), text, text) to anon;
 
 -- ============================================================
 -- FUNCTION: start_game
@@ -153,7 +155,8 @@ begin
 end;
 $$;
 
-grant execute on function start_game to authenticated;
+revoke execute on function start_game(char(6)) from public;
+grant execute on function start_game(char(6)) to authenticated;
 
 -- ============================================================
 -- FUNCTION: advance_question
@@ -193,7 +196,8 @@ begin
 end;
 $$;
 
-grant execute on function advance_question to authenticated;
+revoke execute on function advance_question(char(6)) from public;
+grant execute on function advance_question(char(6)) to authenticated;
 
 -- ============================================================
 -- FUNCTION: submit_answer
@@ -308,7 +312,8 @@ end;
 $$;
 
 -- Grant to anon: players are unauthenticated
-grant execute on function submit_answer to anon;
+revoke execute on function submit_answer(char(6), uuid, uuid, char(1), int) from public;
+grant execute on function submit_answer(char(6), uuid, uuid, char(1), int) to anon;
 
 -- ============================================================
 -- FUNCTION: end_game
@@ -333,7 +338,8 @@ begin
 end;
 $$;
 
-grant execute on function end_game to authenticated;
+revoke execute on function end_game(char(6)) from public;
+grant execute on function end_game(char(6)) to authenticated;
 
 -- ============================================================
 -- FUNCTION: get_leaderboard
@@ -374,7 +380,8 @@ begin
 end;
 $$;
 
-grant execute on function get_leaderboard to anon, authenticated;
+revoke execute on function get_leaderboard(char(6), int) from public;
+grant execute on function get_leaderboard(char(6), int) to anon, authenticated;
 
 -- ============================================================
 -- FUNCTION: get_question_results
@@ -429,4 +436,5 @@ begin
 end;
 $$;
 
-grant execute on function get_question_results to authenticated;
+revoke execute on function get_question_results(char(6), uuid) from public;
+grant execute on function get_question_results(char(6), uuid) to authenticated;

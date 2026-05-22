@@ -196,24 +196,5 @@ create policy "Host reads responses"
   );
 
 -- ============================================================
--- VIEW: safe_questions
--- Exposes questions WITHOUT the correct_option field.
--- Used by the player client to display options.
+-- END OF MIGRATION 001
 -- ============================================================
-create or replace view safe_questions as
-  select
-    id,
-    quiz_id,
-    position,
-    text,
-    time_limit,
-    max_points,
-    option_a,
-    option_b,
-    option_c,
-    option_d
-    -- correct_option intentionally omitted
-  from questions;
-
--- Grant anon read access to the safe view
-grant select on safe_questions to anon;
