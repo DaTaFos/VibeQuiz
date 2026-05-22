@@ -11,9 +11,9 @@ export default function LandingPage() {
         </div>
 
         <div className="relative z-10 animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500/20 border border-brand-400/30 rounded-full text-brand-300 text-sm font-medium mb-8">
+          {/* <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500/20 border border-brand-400/30 rounded-full text-brand-300 text-sm font-medium mb-8">
             ⚡ Real-time · Up to 300 players · Zero lag
-          </div>
+          </div> */}
 
           <h1 className="text-6xl md:text-8xl font-black tracking-tight mb-6">
             <span className="text-white">Vibe</span>
@@ -44,11 +44,11 @@ export default function LandingPage() {
         </div>
 
         {/* Feature grid */}
-        <div className="relative z-10 mt-24 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl w-full animate-slide-up">
+        {/* <div className="relative z-10 mt-24 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl w-full animate-slide-up">
           {[
             {
               icon: '🚀',
-              title: '< 100ms Latency',
+              title: '< 1000ms Latency',
               desc: 'Supabase Realtime Broadcast delivers questions instantly to all players.',
             },
             {
@@ -68,11 +68,11 @@ export default function LandingPage() {
               <p className="text-gray-400 text-sm leading-relaxed">{f.desc}</p>
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
 
       <footer className="text-center py-6 text-gray-600 text-sm">
-        Built with Next.js + Supabase
+        © 2026 Thanawit Tontoei. All rights reserved.
       </footer>
     </main>
   )
