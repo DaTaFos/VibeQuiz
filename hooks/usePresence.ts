@@ -17,6 +17,7 @@ export function usePresence(roomCode: string, playerInfo?: PresencePlayer) {
   const supabase = createClient()
   const [players, setPlayers] = useState<PresencePlayer[]>([])
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+  const [subscribed, setSubscribed] = useState(false)
 
   useEffect(() => {
     if (!roomCode) return
@@ -33,18 +34,27 @@ export function usePresence(roomCode: string, playerInfo?: PresencePlayer) {
           .filter((p) => p.playerId) // exclude host
         setPlayers(list as PresencePlayer[])
       })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED' && playerInfo) {
-          await channel.track(playerInfo)
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setSubscribed(true)
         }
       })
 
     channelRef.current = channel
 
     return () => {
+      setSubscribed(false)
       supabase.removeChannel(channel)
     }
-  }, [roomCode, supabase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [roomCode, supabase])
+
+  // Securely track playerInfo whenever subscription is ready and session is loaded
+  useEffect(() => {
+    const channel = channelRef.current
+    if (subscribed && channel && playerInfo) {
+      channel.track(playerInfo)
+    }
+  }, [subscribed, playerInfo])
 
   return { players }
 }

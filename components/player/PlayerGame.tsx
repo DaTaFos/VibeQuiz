@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getPlayerSession, clearPlayerSession } from '@/lib/session'
 import { usePlayerChannel } from '@/hooks/usePlayerChannel'
+import { usePresence } from '@/hooks/usePresence'
 import JoinForm from '@/components/player/JoinForm'
 import type {
   NextQuestionPayload,
@@ -35,6 +36,12 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
   const [myScore, setMyScore] = useState(0)
   const [timeLeft, setTimeLeft] = useState(0)
   const [timerActive, setTimerActive] = useState(false)
+
+  // Track player presence on the host's lobby screen
+  usePresence(
+    roomCode,
+    session ? { playerId: session.playerId, name: session.name, avatar: session.avatar } : undefined
+  )
 
   // Restore session on mount
   useEffect(() => {
