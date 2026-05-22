@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    @apply bg-gray-950 text-white min-h-screen;
+  }
+}
+
+@layer components {
+  /* Answer option buttons A/B/C/D */
+  .answer-btn {
+    @apply relative w-full flex items-center gap-4 p-4 rounded-2xl font-semibold text-lg
+           border-2 border-transparent cursor-pointer transition-all duration-200
+           active:scale-95 select-none;
+  }
+
+  .answer-btn-A {
+    @apply answer-btn bg-red-600/80 hover:bg-red-500 hover:scale-[1.02] hover:shadow-lg hover:shadow-red-500/30;
+  }
+
+  .answer-btn-B {
+    @apply answer-btn bg-blue-600/80 hover:bg-blue-500 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/30;
+  }
+
+  .answer-btn-C {
+    @apply answer-btn bg-yellow-500/80 hover:bg-yellow-400 hover:scale-[1.02] hover:shadow-lg hover:shadow-yellow-400/30;
+  }
+
+  .answer-btn-D {
+    @apply answer-btn bg-green-600/80 hover:bg-green-500 hover:scale-[1.02] hover:shadow-lg hover:shadow-green-500/30;
+  }
+
+  .answer-btn-selected {
+    @apply ring-4 ring-white scale-[1.03] shadow-2xl;
+  }
+
+  .answer-btn-correct {
+    @apply ring-4 ring-green-400 bg-green-500 shadow-2xl shadow-green-500/50;
+  }
+
+  .answer-btn-incorrect {
+    @apply opacity-50 scale-95;
+  }
+
+  /* Glass card */
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply px-6 py-3 bg-brand-500 hover:bg-brand-400 text-white font-semibold rounded-xl
+           transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed
+           shadow-lg shadow-brand-500/30 hover:shadow-brand-400/40;
+  }
+
+  /* Secondary button */
+  .btn-secondary {
+    @apply px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl
+           border border-white/20 transition-all duration-200 active:scale-95;
+  }
+
+  /* Danger button */
+  .btn-danger {
+    @apply px-6 py-3 bg-red-600/80 hover:bg-red-500 text-white font-semibold rounded-xl
+           transition-all duration-200 active:scale-95;
+  }
+
+  /* Input field */
+  .input-field {
+    @apply w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white
+           placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-brand-400
+           focus:border-transparent transition-all duration-200;
+  }
+
+  /* Countdown bar */
+  .countdown-bar {
+    @apply h-3 rounded-full transition-none;
+    animation: countdown linear forwards;
+  }
+
+  /* Leaderboard rank colors */
+  .rank-1 { @apply text-yellow-400; }
+  .rank-2 { @apply text-gray-300; }
+  .rank-3 { @apply text-amber-600; }
+}
