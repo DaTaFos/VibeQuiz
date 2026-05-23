@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getPlayerSession, clearPlayerSession } from '@/lib/session'
 import { usePlayerChannel } from '@/hooks/usePlayerChannel'
-import { usePresence } from '@/hooks/usePresence'
 import JoinForm from '@/components/player/JoinForm'
 import type {
   NextQuestionPayload,
@@ -37,12 +36,6 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
   const [timeLeft, setTimeLeft] = useState(0)
   const [timerActive, setTimerActive] = useState(false)
 
-  // Track player presence on the host's lobby screen
-  usePresence(
-    roomCode,
-    session ? { playerId: session.playerId, name: session.name, avatar: session.avatar } : undefined
-  )
-
   // Restore session on mount
   useEffect(() => {
     const stored = getPlayerSession(roomCode)
@@ -72,10 +65,9 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
     setAnswerResult(null)
     setPhase('question')
 
-    // Sync timer to broadcast timestamp
-    const elapsed = Math.floor((Date.now() - payload.startedAt) / 1000)
-    const remaining = Math.max(payload.timeLimitSeconds - elapsed, 0)
-    setTimeLeft(remaining)
+    // Fix system clock drift bugs by starting countdown directly from timeLimitSeconds.
+    // WebSocket transmission latency is sub-100ms, making it extremely synchronized.
+    setTimeLeft(payload.timeLimitSeconds)
     setTimerActive(true)
   }, [])
 
@@ -91,7 +83,12 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
     setPhase('finished')
   }, [])
 
-  usePlayerChannel(roomCode, { onNextQuestion, onShowLeaderboard, onGameEnded })
+  // Manage exactly ONE WebSocket channel for both broadcast events and presence tracking
+  usePlayerChannel(
+    roomCode,
+    session ? { playerId: session.playerId, name: session.name, avatar: session.avatar } : null,
+    { onNextQuestion, onShowLeaderboard, onGameEnded }
+  )
 
   async function submitAnswer(option: typeof OPTION_LETTERS[number]) {
     if (!session || !currentQuestion || selectedOption) return
