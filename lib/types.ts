@@ -61,7 +61,8 @@ export interface NextQuestionPayload {
   text: string
   options: { A: string; B: string; C: string; D: string }
   timeLimitSeconds: number
-  startedAt: number // unix ms
+  startedAt: number  // unix ms — when the question timer started
+  serverTime: number // unix ms — server wall clock at broadcast time (for offset calibration)
 }
 
 export interface ShowLeaderboardPayload {

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getPlayerSession, clearPlayerSession } from '@/lib/session'
 import { usePlayerChannel } from '@/hooks/usePlayerChannel'
+import { useServerClock } from '@/hooks/useServerClock'
 import JoinForm from '@/components/player/JoinForm'
 import type {
   NextQuestionPayload,
@@ -34,7 +35,10 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [myScore, setMyScore] = useState(0)
   const [timeLeft, setTimeLeft] = useState(0)
-  const [timerActive, setTimerActive] = useState(false)
+
+  // Wall-clock timer state — stores the active question's timing info
+  const activeTimerRef = useRef<{ startedAt: number; timeLimitSeconds: number } | null>(null)
+  const { calibrate, correctedNow } = useServerClock()
 
   // Restore session on mount
   useEffect(() => {
@@ -47,41 +51,43 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
     }
   }, [roomCode])
 
-  // Countdown timer
+  // Wall-clock timer: recompute timeLeft from absolute startedAt every 100ms.
+  // Immune to drift, throttling, and tab suspension — always mathematically correct.
   useEffect(() => {
-    if (!timerActive || timeLeft <= 0) return
     const id = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) { setTimerActive(false); return 0 }
-        return t - 1
-      })
-    }, 1000)
+      const active = activeTimerRef.current
+      if (!active) return
+      const elapsed = (correctedNow() - active.startedAt) / 1000
+      const remaining = Math.max(0, active.timeLimitSeconds - elapsed)
+      setTimeLeft(Math.ceil(remaining))
+    }, 100)
     return () => clearInterval(id)
-  }, [timerActive, timeLeft])
+  }, [correctedNow])
 
   const onNextQuestion = useCallback((payload: NextQuestionPayload) => {
+    // Calibrate clock offset using server_time from broadcast
+    calibrate(payload.serverTime)
+
     setCurrentQuestion(payload)
     setSelectedOption(null)
     setAnswerResult(null)
+    // Arm the wall-clock timer — 100ms interval picks it up immediately
+    activeTimerRef.current = {
+      startedAt: payload.startedAt,
+      timeLimitSeconds: payload.timeLimitSeconds,
+    }
     setPhase('question')
-
-    // Sync timer to host wall clock: subtract transmission delay so player
-    // and host countdowns are visually identical.
-    const elapsedSec = Math.max(0, Math.floor((Date.now() - payload.startedAt) / 1000))
-    const remaining = Math.max(1, payload.timeLimitSeconds - elapsedSec)
-    setTimeLeft(remaining)
-    setTimerActive(true)
-  }, [])
+  }, [calibrate])
 
   const onShowLeaderboard = useCallback((payload: ShowLeaderboardPayload) => {
+    activeTimerRef.current = null  // stop timer
     setLeaderboard(payload.players)
-    setTimerActive(false)
     setPhase('leaderboard')
   }, [])
 
   const onGameEnded = useCallback((payload: GameEndedPayload) => {
+    activeTimerRef.current = null  // stop timer
     setLeaderboard(payload.players)
-    setTimerActive(false)
     setPhase('finished')
   }, [])
 
@@ -95,16 +101,21 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
   async function submitAnswer(option: typeof OPTION_LETTERS[number]) {
     if (!session || !currentQuestion || selectedOption) return
 
-    const responseTimeMs = Math.floor((currentQuestion.timeLimitSeconds - timeLeft) * 1000 + (Date.now() % 1000))
+    // Compute response time from the wall clock using the same startedAt reference
+    const elapsedMs = correctedNow() - currentQuestion.startedAt
+    const responseTimeMs = Math.min(
+      Math.max(0, Math.floor(elapsedMs)),
+      currentQuestion.timeLimitSeconds * 1000
+    )
+    activeTimerRef.current = null  // stop timer
     setSelectedOption(option)
-    setTimerActive(false)
 
     const { data } = await supabase.rpc('submit_answer', {
       p_room_code: roomCode,
       p_player_id: session.playerId,
       p_question_id: currentQuestion.questionId,
       p_selected_option: option,
-      p_response_time_ms: Math.min(responseTimeMs, currentQuestion.timeLimitSeconds * 1000),
+      p_response_time_ms: responseTimeMs,
     })
 
     if (data?.success) {

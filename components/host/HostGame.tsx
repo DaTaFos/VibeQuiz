@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { usePresence } from '@/hooks/usePresence'
 import { useHostChannel } from '@/hooks/useHostChannel'
@@ -19,34 +19,41 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
   const [phase, setPhase] = useState<GamePhase>('lobby')
   const [currentQ, setCurrentQ] = useState(0) // 0-indexed into questions array
   const [timeLeft, setTimeLeft] = useState(0)
-  const [timerActive, setTimerActive] = useState(false)
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [questionResults, setQuestionResults] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+
+  // Wall-clock timer — stores the active question's timing reference
+  const activeTimerRef = useRef<{ startedAt: number; timeLimitSeconds: number } | null>(null)
+  const phaseRef = useRef(phase)  // stable ref so timer callback can read latest phase
+  const loadingRef = useRef(loading)
 
   const { players } = usePresence(room.room_code)
   const { broadcastNextQuestion, broadcastLeaderboard, broadcastGameEnded } =
     useHostChannel(room.room_code)
 
-  // Countdown timer
-  useEffect(() => {
-    if (!timerActive || timeLeft <= 0) return
-    const id = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) { setTimerActive(false); return 0 }
-        return t - 1
-      })
-    }, 1000)
-    return () => clearInterval(id)
-  }, [timerActive, timeLeft])
+  // Keep refs in sync with state
+  useEffect(() => { phaseRef.current = phase }, [phase])
+  useEffect(() => { loadingRef.current = loading }, [loading])
 
-  // Auto-advance when timer hits 0 during question phase
+  // Wall-clock timer: recompute timeLeft from absolute startedAt every 100ms.
+  // When it hits 0, auto-advance to results (same as jovVix pattern).
   useEffect(() => {
-    if (phase === 'question' && !timerActive && timeLeft === 0) {
-      handleNext()
-    }
+    const id = setInterval(() => {
+      const active = activeTimerRef.current
+      if (!active) return
+      const elapsed = (Date.now() - active.startedAt) / 1000
+      const remaining = Math.max(0, active.timeLimitSeconds - elapsed)
+      setTimeLeft(Math.ceil(remaining))
+      // Auto-advance when timer expires and we're still in question phase
+      if (remaining <= 0 && phaseRef.current === 'question' && !loadingRef.current) {
+        activeTimerRef.current = null
+        handleNext()
+      }
+    }, 100)
+    return () => clearInterval(id)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, timerActive, timeLeft])
+  }, [])
 
   async function fetchLeaderboard() {
     const { data } = await supabase.rpc('get_leaderboard', {
@@ -83,8 +90,8 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
     setCurrentQ(idx)
     setPhase('question')
     setTimeLeft(q.time_limit)
-    setTimerActive(false)   // hold — start AFTER broadcast so startedAt is accurate
     setQuestionResults(null)
+    activeTimerRef.current = null  // disarm while waiting for broadcast
 
     const startedAt = Date.now()
     await broadcastNextQuestion({
@@ -94,17 +101,17 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
       options: { A: q.option_a, B: q.option_b, C: q.option_c, D: q.option_d },
       timeLimitSeconds: q.time_limit,
       startedAt,
+      serverTime: startedAt,
     })
 
-    // Start host timer immediately after broadcast — both host and player
-    // now count down from the same reference point (startedAt).
-    setTimerActive(true)
+    // Arm timer after broadcast — host and player both start from the same startedAt
+    activeTimerRef.current = { startedAt, timeLimitSeconds: q.time_limit }
   }
 
   async function handleNext() {
     if (loading) return   // guard against double-call (auto-advance + button click)
     setLoading(true)
-    setTimerActive(false)
+    activeTimerRef.current = null  // stop timer
 
     const q = questions[currentQ]
 
