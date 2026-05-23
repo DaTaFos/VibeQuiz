@@ -40,6 +40,14 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
     return () => clearInterval(id)
   }, [timerActive, timeLeft])
 
+  // Auto-advance when timer hits 0 during question phase
+  useEffect(() => {
+    if (phase === 'question' && !timerActive && timeLeft === 0) {
+      handleNext()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, timerActive, timeLeft])
+
   async function fetchLeaderboard() {
     const { data } = await supabase.rpc('get_leaderboard', {
       p_room_code: room.room_code,
@@ -90,10 +98,14 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
   }
 
   async function handleNext() {
+    if (loading) return   // guard against double-call (auto-advance + button click)
     setLoading(true)
     setTimerActive(false)
 
     const q = questions[currentQ]
+
+    // Fetch both in parallel; broadcast as soon as leaderboard arrives so players
+    // transition immediately — don't gate on question results finishing.
     const [results, lb] = await Promise.all([
       fetchQuestionResults(q.id),
       fetchLeaderboard(),
@@ -112,8 +124,9 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
       return
     }
 
-    const { data } = await supabase.rpc('advance_question', { p_room_code: room.room_code })
-    if (data?.success) await sendQuestion(nextIdx)
+    // Fire-and-forget DB update; broadcast always goes out so players are never stuck
+    void supabase.rpc('advance_question', { p_room_code: room.room_code })
+    await sendQuestion(nextIdx)
   }
 
   async function handleEndGame() {

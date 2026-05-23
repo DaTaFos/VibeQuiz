@@ -65,9 +65,11 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
     setAnswerResult(null)
     setPhase('question')
 
-    // Fix system clock drift bugs by starting countdown directly from timeLimitSeconds.
-    // WebSocket transmission latency is sub-100ms, making it extremely synchronized.
-    setTimeLeft(payload.timeLimitSeconds)
+    // Sync timer to host wall clock: subtract transmission delay so player
+    // and host countdowns are visually identical.
+    const elapsedSec = Math.max(0, Math.floor((Date.now() - payload.startedAt) / 1000))
+    const remaining = Math.max(1, payload.timeLimitSeconds - elapsedSec)
+    setTimeLeft(remaining)
     setTimerActive(true)
   }, [])
 
