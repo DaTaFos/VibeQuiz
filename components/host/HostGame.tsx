@@ -80,13 +80,13 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
     const q = questions[idx]
     if (!q) return
 
-    const startedAt = Date.now()
     setCurrentQ(idx)
     setPhase('question')
     setTimeLeft(q.time_limit)
-    setTimerActive(true)
+    setTimerActive(false)   // hold — start AFTER broadcast so startedAt is accurate
     setQuestionResults(null)
 
+    const startedAt = Date.now()
     await broadcastNextQuestion({
       questionIndex: idx + 1,
       questionId: q.id,
@@ -95,6 +95,10 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
       timeLimitSeconds: q.time_limit,
       startedAt,
     })
+
+    // Start host timer immediately after broadcast — both host and player
+    // now count down from the same reference point (startedAt).
+    setTimerActive(true)
   }
 
   async function handleNext() {

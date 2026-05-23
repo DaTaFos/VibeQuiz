@@ -11,7 +11,6 @@ import type { BroadcastPayload, LeaderboardEntry } from '@/lib/types'
 export function useHostChannel(roomCode: string) {
   const supabase = createClient()
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
-  const subscribedRef = useRef(false)
 
   useEffect(() => {
     if (!roomCode) return
@@ -20,36 +19,18 @@ export function useHostChannel(roomCode: string) {
       config: { broadcast: { self: false } },
     })
 
-    channel.subscribe((status) => {
-      subscribedRef.current = status === 'SUBSCRIBED'
-    })
+    channel.subscribe()
     channelRef.current = channel
 
     return () => {
-      subscribedRef.current = false
       supabase.removeChannel(channel)
     }
   }, [roomCode, supabase])
 
   const broadcast = useCallback(
     async (payload: BroadcastPayload) => {
-      const ch = channelRef.current
-      if (!ch) return
-
-      // Wait up to 3 seconds for channel to be subscribed before sending
-      if (!subscribedRef.current) {
-        await new Promise<void>((resolve) => {
-          const start = Date.now()
-          const poll = setInterval(() => {
-            if (subscribedRef.current || Date.now() - start > 3000) {
-              clearInterval(poll)
-              resolve()
-            }
-          }, 50)
-        })
-      }
-
-      await ch.send({
+      if (!channelRef.current) return
+      await channelRef.current.send({
         type: 'broadcast',
         event: payload.type,
         payload,
