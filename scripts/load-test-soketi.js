@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
-const Pusher = require('pusher-js');
+const { Pusher } = require('pusher-js');
 
 // 1. Parse .env.local
 function loadEnv() {
