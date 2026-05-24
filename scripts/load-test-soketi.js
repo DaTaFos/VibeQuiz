@@ -12,6 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const { Pusher } = require('pusher-js');
+const crypto = require('crypto');
 
 // 1. Parse .env.local
 function loadEnv() {
@@ -51,6 +52,7 @@ async function runGameLoopSimulation() {
   const supabaseKey = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   const pusherKey = env.NEXT_PUBLIC_PUSHER_KEY || 'app-key';
+  const pusherSecret = env.PUSHER_SECRET || 'app-secret';
   const pusherHost = env.NEXT_PUBLIC_PUSHER_HOST || '127.0.0.1';
   const pusherPort = parseInt(env.NEXT_PUBLIC_PUSHER_PORT || '6001');
   const useTLS = env.NEXT_PUBLIC_PUSHER_TLS === 'true';
@@ -120,24 +122,51 @@ async function runGameLoopSimulation() {
           endpoint: '',
           transport: 'custom',
           customHandler: (params, callback) => {
-            // Highly optimized custom local auth to bypass Next.js HTTP overhead
-            const presenceData = {
+            // Highly optimized HMAC SHA256 auth to comply with real production Soketi VM
+            const socketId = params.socketId;
+            const channelName = params.channel;
+            
+            const presenceData = JSON.stringify({
               user_id: player.playerId,
               user_info: {
                 playerId: player.playerId,
                 name: player.name,
                 avatar: player.avatar
               }
-            };
+            });
+
+            const stringToSign = `${socketId}:${channelName}:${presenceData}`;
+            const hash = crypto
+              .createHmac('sha256', pusherSecret)
+              .update(stringToSign)
+              .digest('hex');
+            
+            const auth = `${pusherKey}:${hash}`;
+
             callback(null, {
-              auth: 'mock-auth',
-              channel_data: JSON.stringify(presenceData)
+              auth,
+              channel_data: presenceData
             });
           }
         }
       });
 
       player.pusher = pusher;
+
+      // Log connection states and failures for debugging
+      pusher.connection.bind('state_change', (states) => {
+        if (states.current === 'failed' || states.current === 'unavailable') {
+          console.error(`  [Player ${player.playerNum}] ❌ Connection state: ${states.current}`);
+          resolve(); // Resolve to avoid hanging the promise chain
+        }
+      });
+
+      pusher.connection.bind('error', (err) => {
+        if (player.playerNum === 1 || player.playerNum % 50 === 0) {
+          console.error(`  [Player ${player.playerNum}] ❌ Connection error:`, err.error?.message || err.message || err);
+        }
+        resolve(); // Resolve to avoid hanging
+      });
 
       const channelName = `presence-room-${ROOM_CODE}`;
       const channel = pusher.subscribe(channelName);
