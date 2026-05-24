@@ -299,6 +299,9 @@ async function runGameLoopSimulation() {
   const players = [];
 
   const joinPromises = Array.from({ length: NUM_PLAYERS }).map(async (_, index) => {
+    // Stagger database joins to avoid Supabase Free Tier rate limits (approx 28 joins/sec)
+    await new Promise((resolve) => setTimeout(resolve, index * 35));
+
     const playerNum = index + 1;
     const name = `Bot-Player-${playerNum}`;
     const avatar = AVATARS[index % AVATARS.length];
@@ -328,8 +331,8 @@ async function runGameLoopSimulation() {
   // --- Step 2: Connect raw WebSockets ---
   console.log('\n📡 Step 2: Connecting simulated players to Soketi WebSocket server...');
 
-  // 300 players × 20ms stagger = last player starts at ~6s; 15s gives ample headroom.
-  const SOCKET_TIMEOUT_MS = 30000;
+  // 400 players × 30ms stagger = last player starts at ~12s; 40s gives ample headroom.
+  const SOCKET_TIMEOUT_MS = 40000;
   const channelName = `presence-room-${ROOM_CODE}`;
 
   let successCount = 0;
@@ -348,7 +351,7 @@ async function runGameLoopSimulation() {
         });
         if (ok) successCount++; else failCount++;
         resolve();
-      }, index * 20);
+      }, index * 30);
     })
   );
 
