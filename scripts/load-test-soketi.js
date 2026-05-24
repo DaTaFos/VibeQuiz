@@ -22,12 +22,12 @@ function loadEnv() {
     process.exit(1);
   }
 
-  const content = fs.readFileSync(envPath, 'utf8');
+  const content = fs.readFileSync(envPath, 'utf8').replace(/\r/g, '');
   const env = {};
   content.split('\n').forEach((line) => {
     const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
     if (match) {
-      let val = match[2] || '';
+      let val = (match[2] || '').trim();
       if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
       if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1);
       env[match[1]] = val.trim();
@@ -36,7 +36,7 @@ function loadEnv() {
   return env;
 }
 
-const AVATARS = ['😀','😎','🤩','🥳','😤','🧠','🦊','🐼','🚀','🎮','🔥','⚡','🌈','👾','🏆'];
+const AVATARS = ['😀', '😎', '🤩', '🥳', '😤', '🧠', '🦊', '🐼', '🚀', '🎮', '🔥', '⚡', '🌈', '👾', '🏆'];
 const ROOM_CODE = process.argv[2];
 const NUM_PLAYERS = Number(process.argv[3]) || 300;
 
@@ -67,7 +67,7 @@ async function runGameLoopSimulation() {
   const players = [];
 
   console.log(`🔄 Step 1: Registering ${NUM_PLAYERS} players in the database...`);
-  
+
   const joinPromises = Array.from({ length: NUM_PLAYERS }).map(async (_, index) => {
     const playerNum = index + 1;
     const name = `Bot-Player-${playerNum}`;
@@ -106,12 +106,41 @@ async function runGameLoopSimulation() {
   console.log(`\n✅ ${players.length}/${NUM_PLAYERS} players registered successfully in Supabase.`);
 
   console.log('\n📡 Step 2: Connecting simulated players to Soketi WebSocket server...');
-  
+
+  // How long (ms) to wait for a single socket to subscribe before giving up.
+  // 300 players × 20ms stagger = last player starts at 6s, so 15s gives ample headroom.
+  const SOCKET_TIMEOUT_MS = 15000;
+
+  let successCount = 0;
+  let failCount = 0;
+
   const connectPromises = players.map((player, index) => {
     return new Promise((resolve) => {
+      let resolved = false;
+
+      // Safely resolve once — prevents double-resolve from timeout + event racing
+      const done = (ok, reason) => {
+        if (resolved) return;
+        resolved = true;
+        if (ok) {
+          successCount++;
+        } else {
+          failCount++;
+          if (player.playerNum === 1 || player.playerNum % 50 === 0) {
+            console.error(`  [Player ${player.playerNum}] ❌ Did not subscribe: ${reason}`);
+          }
+        }
+        resolve();
+      };
+
       // Stagger connection initiation slightly (20ms) to prevent overwhelming the server
       // with 300 simultaneous secure TLS handshakes at the exact same millisecond.
       setTimeout(() => {
+        // Per-socket deadline — if subscription_succeeded never fires, don't hang forever
+        const timeoutId = setTimeout(() => {
+          done(false, `timeout after ${SOCKET_TIMEOUT_MS}ms`);
+        }, SOCKET_TIMEOUT_MS);
+
         // Create high-concurrency pusher client per player
         const pusher = new Pusher(pusherKey, {
           wsHost: pusherHost,
@@ -128,7 +157,7 @@ async function runGameLoopSimulation() {
               // Highly optimized HMAC SHA256 auth to comply with real production Soketi VM
               const socketId = params.socketId;
               const channelName = params.channel;
-              
+
               const presenceData = JSON.stringify({
                 user_id: player.playerId,
                 user_info: {
@@ -143,7 +172,7 @@ async function runGameLoopSimulation() {
                 .createHmac('sha256', pusherSecret)
                 .update(stringToSign)
                 .digest('hex');
-              
+
               const auth = `${pusherKey}:${hash}`;
 
               callback(null, {
@@ -156,49 +185,59 @@ async function runGameLoopSimulation() {
 
         player.pusher = pusher;
 
-      // Log connection states and failures for debugging
-      pusher.connection.bind('state_change', (states) => {
-        if (states.current === 'failed' || states.current === 'unavailable') {
-          console.error(`  [Player ${player.playerNum}] ❌ Connection state: ${states.current}`);
-          resolve(); // Resolve to avoid hanging the promise chain
-        }
-      });
+        // Log terminal connection states so we know why a socket failed
+        pusher.connection.bind('state_change', (states) => {
+          if (states.current === 'failed' || states.current === 'unavailable') {
+            clearTimeout(timeoutId);
+            done(false, `connection state: ${states.current}`);
+          }
+        });
 
-      pusher.connection.bind('error', (err) => {
-        if (player.playerNum === 1 || player.playerNum % 50 === 0) {
-          console.error(`  [Player ${player.playerNum}] ❌ Connection error:`, err.error?.message || err.message || err);
-        }
-        resolve(); // Resolve to avoid hanging
-      });
+        pusher.connection.bind('error', (err) => {
+          clearTimeout(timeoutId);
+          done(false, `connection error: ${err.error?.message || err.message || JSON.stringify(err)}`);
+        });
 
-      const channelName = `presence-room-${ROOM_CODE}`;
-      const channel = pusher.subscribe(channelName);
+        const channelName = `presence-room-${ROOM_CODE}`;
+        const channel = pusher.subscribe(channelName);
 
-      channel.bind('pusher:subscription_succeeded', () => {
-        if (player.playerNum === 1 || player.playerNum % 50 === 0) {
-          console.log(`  [Player ${player.playerNum}/${NUM_PLAYERS}] 🟢 Subscribed to Soketi presence channel`);
-        }
-        resolve();
-      });
+        channel.bind('pusher:subscription_succeeded', () => {
+          clearTimeout(timeoutId);
+          if (player.playerNum === 1 || player.playerNum % 50 === 0) {
+            console.log(`  [Player ${player.playerNum}/${NUM_PLAYERS}] 🟢 Subscribed to Soketi presence channel`);
+          }
+          done(true);
+        });
 
-      // Bind to host broadcast game events
-      channel.bind('NEXT_QUESTION', (data) => {
-        handleNextQuestion(player, data);
-      });
+        // Subscription was rejected by the server (bad auth, room full, etc.)
+        channel.bind('pusher:subscription_error', (err) => {
+          clearTimeout(timeoutId);
+          done(false, `subscription_error: ${JSON.stringify(err)}`);
+        });
 
-      channel.bind('SHOW_LEADERBOARD', (data) => {
-        handleShowLeaderboard(player, data);
-      });
+        // Bind to host broadcast game events
+        channel.bind('NEXT_QUESTION', (data) => {
+          handleNextQuestion(player, data);
+        });
 
-      channel.bind('GAME_ENDED', (data) => {
-        handleGameEnded(player, data);
-      });
+        channel.bind('SHOW_LEADERBOARD', (data) => {
+          handleShowLeaderboard(player, data);
+        });
+
+        channel.bind('GAME_ENDED', (data) => {
+          handleGameEnded(player, data);
+        });
       }, index * 20);
     });
   });
 
-  await Promise.all(connectPromises);
-  console.log(`\n🟢 All ${players.length} sockets successfully established with Soketi!`);
+  // allSettled so a rejected promise from an unexpected throw never blocks the rest
+  await Promise.allSettled(connectPromises);
+  console.log(`\n🟢 Step 2 complete — ${successCount} connected, ${failCount} failed out of ${players.length} players.`);
+  if (successCount === 0) {
+    console.error('❌ No players connected. Check your Soketi host/port/TLS settings and that the server is reachable.');
+    process.exit(1);
+  }
   console.log(`👉 Go to your Host dashboard and click "Start Game" to begin the simulation.\n`);
 }
 
@@ -207,7 +246,7 @@ async function handleNextQuestion(player, q) {
   const receiveTime = Date.now();
   const elapsedMs = receiveTime - q.startedAt;
   const remainingSeconds = Math.max(q.timeLimitSeconds - Math.floor(elapsedMs / 1000), 0);
-  
+
   if (player.playerNum === 1) {
     console.log(`\n❓ --- Question ${q.questionIndex} Broadcast Received ---`);
     console.log(`  Question:         "${q.text}"`);
@@ -219,7 +258,7 @@ async function handleNextQuestion(player, q) {
 
   // Simulate thinking delay randomized between 1s and 4s
   const thinkTimeMs = Math.floor(Math.random() * 3000 + 1000);
-  
+
   setTimeout(async () => {
     const options = ['A', 'B', 'C', 'D'];
     const selectedOption = options[Math.floor(Math.random() * options.length)];
@@ -251,7 +290,7 @@ async function handleNextQuestion(player, q) {
 function handleShowLeaderboard(player, payload) {
   if (player.playerNum === 1) {
     console.log(`\n📊 --- Leaderboard Screen (Question ${payload.questionIndex} Finished) ---`);
-    
+
     if (payload.questionResults) {
       const results = payload.questionResults;
       console.log(`  Total Responses Captured:  ${results.total_responses}`);
@@ -276,7 +315,7 @@ function handleGameEnded(player, payload) {
       console.log(`    #${idx + 1} ${p.avatar ?? '😶'} ${p.name} - ${p.total_score} pts`);
     });
     console.log(`  =========================\n`);
-    
+
     console.log('🏁 Load test complete. Shutting down active sockets...');
     process.exit(0);
   }
