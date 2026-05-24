@@ -82,6 +82,8 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
   const onShowLeaderboard = useCallback((payload: ShowLeaderboardPayload) => {
     activeTimerRef.current = null  // stop timer
     setLeaderboard(payload.players)
+    setSelectedOption(null)
+    setAnswerResult(null)
     setPhase('leaderboard')
   }, [])
 
@@ -101,14 +103,15 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
   async function submitAnswer(option: typeof OPTION_LETTERS[number]) {
     if (!session || !currentQuestion || selectedOption) return
 
+    // Optimistically lock UI immediately so player can't double-submit
+    setSelectedOption(option)
+
     // Compute response time from the wall clock using the same startedAt reference
     const elapsedMs = correctedNow() - currentQuestion.startedAt
     const responseTimeMs = Math.min(
       Math.max(0, Math.floor(elapsedMs)),
       currentQuestion.timeLimitSeconds * 1000
     )
-    activeTimerRef.current = null  // stop timer
-    setSelectedOption(option)
 
     const { data } = await supabase.rpc('submit_answer', {
       p_room_code: roomCode,
@@ -119,9 +122,13 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
     })
 
     if (data?.success) {
+      activeTimerRef.current = null  // stop timer only after confirmed
       setAnswerResult({ isCorrect: data.is_correct, points: data.points })
       setMyScore((s) => s + (data.points ?? 0))
       setPhase('answered')
+    } else {
+      // RPC failed — unlock so player can retry
+      setSelectedOption(null)
     }
   }
 

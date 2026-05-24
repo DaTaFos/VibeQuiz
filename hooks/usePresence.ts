@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
+import { getPusherClient } from '@/lib/pusher'
 
 export interface PresencePlayer {
   name: string
@@ -14,47 +14,51 @@ export interface PresencePlayer {
  * Host subscribes to see who joins; players track their own presence.
  */
 export function usePresence(roomCode: string, playerInfo?: PresencePlayer) {
-  const supabase = createClient()
   const [players, setPlayers] = useState<PresencePlayer[]>([])
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
-  const [subscribed, setSubscribed] = useState(false)
 
   useEffect(() => {
     if (!roomCode) return
 
-    const channel = supabase.channel(`room:${roomCode}`, {
-      config: { presence: { key: playerInfo?.playerId ?? 'host' } },
-    })
+    // Initialize Pusher with playerInfo if it's a player, or default 'host' info if it's the host
+    const info = playerInfo || { playerId: 'host', name: 'Host', avatar: null }
+    const pusher = getPusherClient(info)
+    const channelName = `presence-room-${roomCode}`
 
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState<PresencePlayer>()
-        const list = Object.values(state)
-          .flat()
-          .filter((p) => p.playerId) // exclude host
-        setPlayers(list as PresencePlayer[])
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          setSubscribed(true)
+    const channel = pusher.subscribe(channelName) as any
+
+    const updatePlayersList = () => {
+      const list: PresencePlayer[] = []
+      channel.members.each((member: any) => {
+        // Exclude the host from the player list
+        if (member.id !== 'host') {
+          list.push({
+            playerId: member.info.playerId,
+            name: member.info.name,
+            avatar: member.info.avatar,
+          })
         }
       })
+      setPlayers(list)
+    }
 
-    channelRef.current = channel
+    channel.bind('pusher:subscription_succeeded', () => {
+      updatePlayersList()
+    })
+
+    channel.bind('pusher:member_added', () => {
+      updatePlayersList()
+    })
+
+    channel.bind('pusher:member_removed', () => {
+      updatePlayersList()
+    })
 
     return () => {
-      setSubscribed(false)
-      supabase.removeChannel(channel)
+      channel.unbind_all()
+      pusher.unsubscribe(channelName)
+      pusher.disconnect()
     }
-  }, [roomCode, supabase])
-
-  // Securely track playerInfo whenever subscription is ready and session is loaded
-  useEffect(() => {
-    const channel = channelRef.current
-    if (subscribed && channel && playerInfo) {
-      channel.track(playerInfo)
-    }
-  }, [subscribed, playerInfo])
+  }, [roomCode, playerInfo?.playerId, playerInfo?.name, playerInfo?.avatar]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return { players }
 }

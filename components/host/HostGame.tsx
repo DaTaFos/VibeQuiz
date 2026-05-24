@@ -135,8 +135,8 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
       return
     }
 
-    // Fire-and-forget DB update; broadcast always goes out so players are never stuck
-    void supabase.rpc('advance_question', { p_room_code: room.room_code })
+    // Must await so DB current_question is updated before players can submit answers
+    await supabase.rpc('advance_question', { p_room_code: room.room_code })
     await sendQuestion(nextIdx)
   }
 

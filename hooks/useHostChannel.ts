@@ -1,42 +1,28 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useCallback } from 'react'
 import type { BroadcastPayload, LeaderboardEntry } from '@/lib/types'
 
 /**
  * Host-side Realtime channel.
- * Sends broadcast events to all players in the room.
+ * Sends broadcast events to all players in the room via /api/broadcast.
  */
 export function useHostChannel(roomCode: string) {
-  const supabase = createClient()
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
-
-  useEffect(() => {
-    if (!roomCode) return
-
-    const channel = supabase.channel(`room:${roomCode}`, {
-      config: { broadcast: { self: false } },
-    })
-
-    channel.subscribe()
-    channelRef.current = channel
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [roomCode, supabase])
-
   const broadcast = useCallback(
     async (payload: BroadcastPayload) => {
-      if (!channelRef.current) return
-      await channelRef.current.send({
-        type: 'broadcast',
-        event: payload.type,
-        payload,
-      })
+      if (!roomCode) return
+      
+      try {
+        await fetch('/api/broadcast', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomCode, payload }),
+        })
+      } catch (error) {
+        console.error('Failed to broadcast via Soketi:', error)
+      }
     },
-    []
+    [roomCode]
   )
 
   const broadcastNextQuestion = useCallback(

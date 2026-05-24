@@ -7,14 +7,18 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node scripts/test-game-loop.js"
+    "test": "node scripts/test-game-loop.js",
+    "soketi-mock": "node scripts/pusher-mock-server.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.8",
     "next": "^15.3.2",
+    "pusher": "^5.3.3",
+    "pusher-js": "^8.5.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@types/node": "^22",

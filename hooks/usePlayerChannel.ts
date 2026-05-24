@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useRef } from 'react'
+import { getPusherClient } from '@/lib/pusher'
 import type {
   NextQuestionPayload,
   ShowLeaderboardPayload,
@@ -22,59 +22,59 @@ interface PresencePlayer {
 
 /**
  * Player-side Realtime channel.
- * Manages exactly ONE WebSocket connection for both Broadcast events and Presence tracking.
+ * Subscribes to Pusher/Soketi for Broadcast events and Presence tracking.
+ * Keyed on primitive values to avoid reconnecting on every parent render.
  */
 export function usePlayerChannel(
   roomCode: string,
   playerInfo: PresencePlayer | null,
   handlers: PlayerChannelHandlers
 ) {
-  const supabase = createClient()
   const handlersRef = useRef(handlers)
-  const [subscribed, setSubscribed] = useState(false)
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+  const playerInfoRef = useRef(playerInfo)
 
-  // Keep handlers ref up-to-date without re-subscribing
+  // Keep refs up-to-date without triggering re-subscription
   useEffect(() => {
     handlersRef.current = handlers
   })
+  useEffect(() => {
+    playerInfoRef.current = playerInfo
+  })
+
+  // Only re-subscribe when primitive identity values change
+  const playerId = playerInfo?.playerId ?? null
+  const playerName = playerInfo?.name ?? null
+  const playerAvatar = playerInfo?.avatar ?? null
 
   useEffect(() => {
-    if (!roomCode) return
+    if (!roomCode || !playerId || !playerName) return
 
-    const channel = supabase.channel(`room:${roomCode}`, {
-      config: { presence: { key: playerInfo?.playerId ?? 'player' } },
+    const info = playerInfoRef.current!
+    const pusher = getPusherClient(info)
+    const channelName = `presence-room-${roomCode}`
+
+    const channel = pusher.subscribe(channelName)
+
+    channel.bind('pusher:subscription_error', (status: any) => {
+      console.error('Pusher subscription error:', status)
     })
 
-    channel
-      .on('broadcast', { event: 'NEXT_QUESTION' }, ({ payload }) => {
-        handlersRef.current.onNextQuestion?.(payload as NextQuestionPayload)
-      })
-      .on('broadcast', { event: 'SHOW_LEADERBOARD' }, ({ payload }) => {
-        handlersRef.current.onShowLeaderboard?.(payload as ShowLeaderboardPayload)
-      })
-      .on('broadcast', { event: 'GAME_ENDED' }, ({ payload }) => {
-        handlersRef.current.onGameEnded?.(payload as GameEndedPayload)
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          setSubscribed(true)
-        }
-      })
+    channel.bind('NEXT_QUESTION', (data: NextQuestionPayload) => {
+      handlersRef.current.onNextQuestion?.(data)
+    })
 
-    channelRef.current = channel
+    channel.bind('SHOW_LEADERBOARD', (data: ShowLeaderboardPayload) => {
+      handlersRef.current.onShowLeaderboard?.(data)
+    })
+
+    channel.bind('GAME_ENDED', (data: GameEndedPayload) => {
+      handlersRef.current.onGameEnded?.(data)
+    })
 
     return () => {
-      setSubscribed(false)
-      supabase.removeChannel(channel)
+      channel.unbind_all()
+      pusher.unsubscribe(channelName)
+      pusher.disconnect()
     }
-  }, [roomCode, supabase]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Track presence on the single active channel
-  useEffect(() => {
-    const channel = channelRef.current
-    if (subscribed && channel && playerInfo) {
-      channel.track(playerInfo)
-    }
-  }, [subscribed, playerInfo])
+  }, [roomCode, playerId, playerName, playerAvatar]) // eslint-disable-line react-hooks/exhaustive-deps
 }
