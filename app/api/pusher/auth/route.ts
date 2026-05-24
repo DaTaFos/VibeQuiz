@@ -5,9 +5,9 @@ const pusher = new Pusher({
   appId: 'app-id',
   key: process.env.NEXT_PUBLIC_PUSHER_KEY || 'app-key',
   secret: process.env.PUSHER_SECRET || 'app-secret',
-  host: process.env.NEXT_PUBLIC_PUSHER_HOST || '127.0.0.1',
-  port: process.env.NEXT_PUBLIC_PUSHER_PORT || '6001',
-  useTLS: process.env.NEXT_PUBLIC_PUSHER_TLS === 'true',
+  host: process.env.PUSHER_SERVER_HOST || process.env.NEXT_PUBLIC_PUSHER_HOST || '127.0.0.1',
+  port: process.env.PUSHER_SERVER_PORT || process.env.NEXT_PUBLIC_PUSHER_PORT || '6001',
+  useTLS: process.env.PUSHER_SERVER_TLS ? process.env.PUSHER_SERVER_TLS === 'true' : process.env.NEXT_PUBLIC_PUSHER_TLS === 'true',
 })
 
 export async function POST(req: Request) {
