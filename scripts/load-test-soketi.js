@@ -107,51 +107,54 @@ async function runGameLoopSimulation() {
 
   console.log('\n📡 Step 2: Connecting simulated players to Soketi WebSocket server...');
   
-  const connectPromises = players.map((player) => {
+  const connectPromises = players.map((player, index) => {
     return new Promise((resolve) => {
-      // Create high-concurrency pusher client per player
-      const pusher = new Pusher(pusherKey, {
-        wsHost: pusherHost,
-        wsPort: pusherPort,
-        wssPort: pusherPort,
-        forceTLS: useTLS,
-        disableStats: true,
-        enabledTransports: ['ws', 'wss'],
-        cluster: 'mt1',
-        channelAuthorization: {
-          endpoint: '',
-          transport: 'custom',
-          customHandler: (params, callback) => {
-            // Highly optimized HMAC SHA256 auth to comply with real production Soketi VM
-            const socketId = params.socketId;
-            const channelName = params.channel;
-            
-            const presenceData = JSON.stringify({
-              user_id: player.playerId,
-              user_info: {
-                playerId: player.playerId,
-                name: player.name,
-                avatar: player.avatar
-              }
-            });
+      // Stagger connection initiation slightly (20ms) to prevent overwhelming the server
+      // with 300 simultaneous secure TLS handshakes at the exact same millisecond.
+      setTimeout(() => {
+        // Create high-concurrency pusher client per player
+        const pusher = new Pusher(pusherKey, {
+          wsHost: pusherHost,
+          wsPort: pusherPort,
+          wssPort: pusherPort,
+          forceTLS: useTLS,
+          disableStats: true,
+          enabledTransports: ['ws', 'wss'],
+          cluster: 'mt1',
+          channelAuthorization: {
+            endpoint: '',
+            transport: 'custom',
+            customHandler: (params, callback) => {
+              // Highly optimized HMAC SHA256 auth to comply with real production Soketi VM
+              const socketId = params.socketId;
+              const channelName = params.channel;
+              
+              const presenceData = JSON.stringify({
+                user_id: player.playerId,
+                user_info: {
+                  playerId: player.playerId,
+                  name: player.name,
+                  avatar: player.avatar
+                }
+              });
 
-            const stringToSign = `${socketId}:${channelName}:${presenceData}`;
-            const hash = crypto
-              .createHmac('sha256', pusherSecret)
-              .update(stringToSign)
-              .digest('hex');
-            
-            const auth = `${pusherKey}:${hash}`;
+              const stringToSign = `${socketId}:${channelName}:${presenceData}`;
+              const hash = crypto
+                .createHmac('sha256', pusherSecret)
+                .update(stringToSign)
+                .digest('hex');
+              
+              const auth = `${pusherKey}:${hash}`;
 
-            callback(null, {
-              auth,
-              channel_data: presenceData
-            });
+              callback(null, {
+                auth,
+                channel_data: presenceData
+              });
+            }
           }
-        }
-      });
+        });
 
-      player.pusher = pusher;
+        player.pusher = pusher;
 
       // Log connection states and failures for debugging
       pusher.connection.bind('state_change', (states) => {
@@ -190,6 +193,7 @@ async function runGameLoopSimulation() {
       channel.bind('GAME_ENDED', (data) => {
         handleGameEnded(player, data);
       });
+      }, index * 20);
     });
   });
 
