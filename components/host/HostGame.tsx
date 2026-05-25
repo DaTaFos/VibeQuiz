@@ -275,20 +275,16 @@ function LobbyView({
         <div className="md:col-span-7 flex flex-col justify-between glass-card p-8 relative overflow-hidden select-none">
           <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl pointer-events-none" />
           
-          <div className="text-center md:text-left">
-            <span className="text-xs font-black tracking-widest text-brand-400 uppercase">Step 1: Scan or Go to URL</span>
-            <div className="mt-4 mb-3">
-              <span className="text-gray-400 text-xs block uppercase tracking-wider mb-1">Join URL</span>
-              <span className="text-base font-bold text-white break-all bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 block text-center md:text-left">
-                {joinUrl || 'Generating link...'}
-              </span>
-            </div>
-            
-            <p className="text-gray-400 text-xs uppercase tracking-wider mt-4 mb-2">Step 2: Enter Room Code</p>
-            <div className="text-6xl md:text-7xl font-black tracking-[0.15em] mb-4 bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent animate-pulse-glow text-center md:text-left">
+          <div className="flex flex-col items-center justify-center text-center flex-1 py-6">
+            <span className="text-xs font-black tracking-widest text-brand-400 uppercase mb-2">Room Code</span>
+            <div className="text-7xl md:text-8xl font-black tracking-[0.15em] pl-[0.15em] bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent animate-pulse-glow">
               {room.room_code}
             </div>
+            <p className="text-gray-400 text-xs mt-2 uppercase tracking-wider font-semibold">
+              Enter this code on the play screen or scan the QR below
+            </p>
           </div>
+
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-white/[0.02] border border-white/5 rounded-2xl p-6 mt-4">
             <div className="flex-1 text-center sm:text-left">
