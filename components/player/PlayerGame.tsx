@@ -7,6 +7,7 @@ import { getPlayerSession, clearPlayerSession } from '@/lib/session'
 import { usePlayerChannel } from '@/hooks/usePlayerChannel'
 import { useServerClock } from '@/hooks/useServerClock'
 import JoinForm from '@/components/player/JoinForm'
+import AvatarImage from '@/components/AvatarImage'
 import type {
   NextQuestionPayload,
   ShowLeaderboardPayload,
@@ -263,7 +264,7 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
               className={`glass-card px-4 py-3 flex items-center gap-3 ${p.name === session?.name ? 'ring-1 ring-brand-400' : ''}`}
             >
               <span className="text-xl w-7 text-center">{i < 3 ? RANK[i] : `#${i + 1}`}</span>
-              <span className="text-xl">{p.avatar ?? '😶'}</span>
+              <AvatarImage avatar={p.avatar} className="w-8 h-8" />
               <span className="flex-1 font-semibold truncate">{p.name}</span>
               <span className="font-black text-brand-300">{p.total_score.toLocaleString()}</span>
             </div>
@@ -293,7 +294,7 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
           return (
             <div key={p.name} className={`glass-card px-4 py-3 flex items-center gap-3 ${p.name === session?.name ? 'ring-1 ring-brand-400' : ''}`}>
               <span className="text-xl w-7 text-center">{i < 3 ? RANK[i] : `#${i + 1}`}</span>
-              <span className="text-xl">{p.avatar ?? '😶'}</span>
+              <AvatarImage avatar={p.avatar} className="w-8 h-8" />
               <span className="flex-1 font-semibold truncate">{p.name}</span>
               <span className="font-black text-brand-300">{p.total_score.toLocaleString()}</span>
             </div>
@@ -322,7 +323,11 @@ function FullScreenMessage({
 }) {
   const inner = (
     <div className="text-center animate-fade-in">
-      {icon && <div className={`text-5xl mb-4 ${pulse ? 'animate-bounce' : ''}`}>{icon}</div>}
+      {icon && (
+        <div className={`flex justify-center mb-4 ${pulse ? 'animate-bounce' : ''}`}>
+          <AvatarImage avatar={icon} className="w-16 h-16" />
+        </div>
+      )}
       {title && <h2 className="text-xl font-bold mb-2">{title}</h2>}
       <p className="text-gray-400">{text}</p>
       {sub && <p className="text-gray-600 text-sm mt-2">{sub}</p>}

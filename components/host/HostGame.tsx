@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { usePresence } from '@/hooks/usePresence'
 import { useHostChannel } from '@/hooks/useHostChannel'
 import type { Question, LeaderboardEntry, Room } from '@/lib/types'
+import AvatarImage from '@/components/AvatarImage'
 
 type GamePhase = 'lobby' | 'question' | 'leaderboard' | 'finished'
 
@@ -256,8 +257,8 @@ function LobbyView({
         </div>
         <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
           {players.map((p) => (
-            <div key={p.playerId} className="flex items-center gap-1.5 bg-white/10 rounded-full px-3 py-1 text-sm animate-bounce-in">
-              {p.avatar && <span>{p.avatar}</span>}
+            <div key={p.playerId} className="flex items-center gap-2 bg-white/10 rounded-full pl-1.5 pr-3.5 py-1.5 text-sm animate-bounce-in">
+              <AvatarImage avatar={p.avatar} className="w-5 h-5" />
               <span>{p.name}</span>
             </div>
           ))}
@@ -412,7 +413,7 @@ function LeaderboardView({
             <div className="text-2xl w-8 text-center">
               {i < 3 ? RANK_STYLES[i] : <span className="text-gray-500 text-lg font-bold">#{i + 1}</span>}
             </div>
-            <div className="text-xl">{p.avatar ?? '😶'}</div>
+            <AvatarImage avatar={p.avatar} className="w-8 h-8" />
             <div className="flex-1 font-semibold">{p.name}</div>
             <div className="font-black text-xl text-brand-300">{p.total_score.toLocaleString()}</div>
           </div>

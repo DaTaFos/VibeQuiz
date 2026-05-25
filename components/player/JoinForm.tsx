@@ -4,8 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { savePlayerSession } from '@/lib/session'
+import AvatarImage from '@/components/AvatarImage'
 
-const AVATARS = ['😀','😎','🤩','🥳','😤','🧠','🦊','🐼','🚀','🎮','🔥','⚡','🌈','👾','🏆']
+const AVATARS = [
+  'Aiden', 'Mia', 'Jack', 'Lily', 'Leo', 
+  'Zoe', 'Max', 'Ava', 'Owen', 'Ruby', 
+  'Luke', 'Ivy', 'Finn', 'Eva', 'Sam'
+]
 
 export default function JoinForm({ prefillCode = '' }: { prefillCode?: string }) {
   const router = useRouter()
@@ -94,19 +99,19 @@ export default function JoinForm({ prefillCode = '' }: { prefillCode?: string })
           Avatar <span className="text-gray-500">(optional)</span>
         </label>
         <div className="flex flex-wrap gap-2">
-          {AVATARS.map((emoji) => (
+          {AVATARS.map((seed) => (
             <button
-              key={emoji}
+              key={seed}
               type="button"
-              onClick={() => setAvatar(avatar === emoji ? null : emoji)}
-              className={`text-2xl w-11 h-11 rounded-xl transition-all hover:scale-110 active:scale-95 ${
-                avatar === emoji
-                  ? 'bg-brand-500/40 ring-2 ring-brand-400 scale-110'
+              onClick={() => setAvatar(avatar === seed ? null : seed)}
+              className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all hover:scale-110 active:scale-95 ${
+                avatar === seed
+                  ? 'bg-brand-500/40 ring-2 ring-brand-400 scale-110 shadow-lg shadow-brand-500/30'
                   : 'bg-white/10 hover:bg-white/20'
               }`}
-              id={`avatar-${emoji}`}
+              id={`avatar-${seed}`}
             >
-              {emoji}
+              <AvatarImage avatar={seed} className="w-10 h-10" />
             </button>
           ))}
         </div>

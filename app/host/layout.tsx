@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import AccountDropdown from '@/components/host/AccountDropdown'
 
 export default function HostLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -27,20 +28,15 @@ async function HostNav() {
       </Link>
 
       <div className="flex items-center gap-4">
-        <span className="text-gray-400 text-sm hidden sm:block">{user.email}</span>
-        <form action="/auth/signout" method="post">
-          <button
-            formAction={async () => {
-              'use server'
-              const supabase = await createClient()
-              await supabase.auth.signOut()
-              redirect('/login')
-            }}
-            className="text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            Sign out
-          </button>
-        </form>
+        <AccountDropdown
+          email={user.email ?? ''}
+          signOutAction={async () => {
+            'use server'
+            const supabase = await createClient()
+            await supabase.auth.signOut()
+            redirect('/login')
+          }}
+        />
       </div>
     </nav>
   )
