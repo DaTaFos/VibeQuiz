@@ -242,45 +242,143 @@ function LobbyView({
   onStart: () => void
   loading: boolean
 }) {
-  return (
-    <div className="max-w-2xl mx-auto px-4 py-10 text-center animate-fade-in">
-      <p className="text-gray-400 text-sm mb-2">Room Code</p>
-      <div className="text-7xl font-black tracking-[0.15em] mb-2 bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent animate-pulse-glow">
-        {room.room_code}
-      </div>
-      <p className="text-gray-400 mb-8">Share this code with your players</p>
+  const [origin, setOrigin] = useState('')
+  const [copied, setCopied] = useState(false)
 
-      <div className="glass-card p-6 mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-lg">Players Joined</h2>
-          <span className="text-2xl font-bold text-brand-400">{players.length}</span>
-        </div>
-        <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
-          {players.map((p) => (
-            <div key={p.playerId} className="flex items-center gap-2 bg-white/10 rounded-full pl-1.5 pr-3.5 py-1.5 text-sm animate-bounce-in">
-              <AvatarImage avatar={p.avatar} className="w-5 h-5" />
-              <span>{p.name}</span>
+  useEffect(() => {
+    setOrigin(window.location.origin)
+  }, [])
+
+  const joinUrl = origin ? `${origin}/play?code=${room.room_code}` : ''
+  const qrCodeUrl = joinUrl 
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinUrl)}&color=6366f1&bgcolor=ffffff&qzone=2`
+    : ''
+
+  const handleCopyLink = () => {
+    if (navigator.clipboard && joinUrl) {
+      navigator.clipboard.writeText(joinUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-8 animate-fade-in flex flex-col min-h-[85vh] justify-center">
+      {/* Title */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-black text-white mb-2">VibeQuiz Lobby</h1>
+        <p className="text-gray-400 text-sm">Players are arriving... get ready to battle!</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-stretch mb-8">
+        {/* LEFT COLUMN: JOIN INFORMATION & QR CODE */}
+        <div className="md:col-span-7 flex flex-col justify-between glass-card p-8 relative overflow-hidden select-none">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl pointer-events-none" />
+          
+          <div className="text-center md:text-left">
+            <span className="text-xs font-black tracking-widest text-brand-400 uppercase">Step 1: Scan or Go to URL</span>
+            <div className="mt-4 mb-3">
+              <span className="text-gray-400 text-xs block uppercase tracking-wider mb-1">Join URL</span>
+              <span className="text-base font-bold text-white break-all bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 block text-center md:text-left">
+                {joinUrl || 'Generating link...'}
+              </span>
             </div>
-          ))}
+            
+            <p className="text-gray-400 text-xs uppercase tracking-wider mt-4 mb-2">Step 2: Enter Room Code</p>
+            <div className="text-6xl md:text-7xl font-black tracking-[0.15em] mb-4 bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent animate-pulse-glow text-center md:text-left">
+              {room.room_code}
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-white/[0.02] border border-white/5 rounded-2xl p-6 mt-4">
+            <div className="flex-1 text-center sm:text-left">
+              <h3 className="font-bold text-white text-lg mb-1">⚡ Scan to Join</h3>
+              <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                Scan the QR code with your mobile device to join instantly with the room code auto-filled!
+              </p>
+              
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="btn-secondary text-xs px-4 py-2 flex items-center gap-1.5 active:scale-95 transition-all select-none"
+              >
+                <span>{copied ? '✅ Copied!' : '🔗 Copy Join Link'}</span>
+              </button>
+            </div>
+
+            {/* Premium QR Code Image Container */}
+            <div className="w-40 h-40 bg-white p-3 rounded-2xl flex items-center justify-center shadow-2xl relative group overflow-hidden border border-white/10 shrink-0 select-none animate-bounce-in">
+              {qrCodeUrl ? (
+                <img 
+                  src={qrCodeUrl} 
+                  alt="Join Game QR Code" 
+                  className="w-full h-full object-contain"
+                  draggable={false}
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-100 animate-pulse rounded-lg" />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: PLAYERS JOINED LIST */}
+        <div className="md:col-span-5 glass-card p-8 flex flex-col justify-between select-none relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
+
+          <div>
+            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+              <h2 className="font-black text-xl text-white tracking-wide">Players</h2>
+              <span className="text-3xl font-extrabold text-brand-400 animate-pulse">{players.length}</span>
+            </div>
+
+            <div className="flex flex-wrap gap-2.5 max-h-[320px] overflow-y-auto pr-1">
+              {players.map((p) => (
+                <div key={p.playerId} className="flex items-center gap-2.5 bg-white/5 border border-white/10 rounded-full pl-2 pr-4 py-2 text-sm hover:border-white/20 transition-all select-none animate-bounce-in">
+                  <AvatarImage avatar={p.avatar} className="w-6 h-6" />
+                  <span className="font-semibold text-gray-200">{p.name}</span>
+                </div>
+              ))}
+              {players.length === 0 && (
+                <div className="w-full py-16 flex flex-col items-center justify-center text-center text-gray-500">
+                  <span className="text-4xl mb-3 animate-bounce">⏳</span>
+                  <p className="text-sm font-semibold">Waiting for players to join…</p>
+                  <p className="text-xs text-gray-600 mt-1">Ready to sync in real-time</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-8 pt-4 border-t border-white/10 flex items-center justify-between text-xs text-gray-500 font-semibold">
+            <span>Room Status: Lobby</span>
+            <span>{questionCount} Questions</span>
+          </div>
+        </div>
+      </div>
+
+      {/* START ACTION PANEL */}
+      <div className="glass-card p-6 flex flex-col sm:flex-row items-center justify-between gap-4 select-none">
+        <div className="text-center sm:text-left">
+          <span className="text-xs text-gray-500 uppercase tracking-widest font-black">Host Controls</span>
+          <h2 className="text-white font-bold text-lg">Ready to launch?</h2>
+        </div>
+
+        <div className="w-full sm:w-auto">
+          <button
+            onClick={onStart}
+            disabled={loading || players.length === 0}
+            className="btn-primary text-lg px-12 py-4 w-full sm:w-auto font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg hover:shadow-brand-500/25"
+            id="start-game-btn"
+          >
+            {loading ? 'Starting…' : '🚀 Start Game'}
+          </button>
           {players.length === 0 && (
-            <p className="text-gray-500 text-sm">Waiting for players to join…</p>
+            <p className="text-gray-500 text-center sm:text-right text-xs mt-1.5 font-semibold">
+              At least 1 player must join to start
+            </p>
           )}
         </div>
       </div>
-
-      <p className="text-gray-400 text-sm mb-6">{questionCount} questions ready</p>
-
-      <button
-        onClick={onStart}
-        disabled={loading || players.length === 0}
-        className="btn-primary text-lg px-10 py-4 w-full"
-        id="start-game-btn"
-      >
-        {loading ? 'Starting…' : '🚀 Start Game'}
-      </button>
-      {players.length === 0 && (
-        <p className="text-gray-500 text-xs mt-2">At least 1 player must join to start</p>
-      )}
     </div>
   )
 }

@@ -5,7 +5,12 @@ export const metadata = {
   description: 'Enter a room code to join a live quiz game.',
 }
 
-export default function PlayPage() {
+export default async function PlayPage(props: {
+  searchParams: Promise<{ code?: string }>
+}) {
+  const resolvedParams = await props.searchParams
+  const prefillCode = resolvedParams.code || ''
+
   return (
     <main className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -22,9 +27,10 @@ export default function PlayPage() {
         </div>
 
         <div className="glass-card p-8">
-          <JoinForm />
+          <JoinForm prefillCode={prefillCode} />
         </div>
       </div>
     </main>
   )
 }
+
