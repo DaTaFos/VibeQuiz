@@ -66,6 +66,12 @@ export function usePresence(
       onPlayerAnsweredRef.current?.(data.playerId)
     })
 
+    channel.bind('PLAYER_AVATAR_CHANGED', (data: { playerId: string; avatar: string }) => {
+      setPlayers((prev) =>
+        prev.map((p) => (p.playerId === data.playerId ? { ...p, avatar: data.avatar } : p))
+      )
+    })
+
     return () => {
       channel.unbind_all()
       pusher.unsubscribe(channelName)

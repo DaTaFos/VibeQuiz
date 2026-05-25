@@ -4,19 +4,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { savePlayerSession } from '@/lib/session'
-import AvatarImage from '@/components/AvatarImage'
-
-const AVATARS = [
-  'Aiden', 'Mia', 'Jack', 'Lily', 'Leo', 
-  'Zoe', 'Max', 'Ava', 'Owen', 'Ruby', 
-  'Luke', 'Ivy', 'Finn', 'Eva', 'Sam'
-]
 
 export default function JoinForm({ prefillCode = '' }: { prefillCode?: string }) {
   const router = useRouter()
   const [roomCode, setRoomCode] = useState(prefillCode)
   const [name, setName] = useState('')
-  const [avatar, setAvatar] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -33,7 +25,7 @@ export default function JoinForm({ prefillCode = '' }: { prefillCode?: string })
     const { data, error: rpcErr } = await supabase.rpc('join_room', {
       p_room_code: code,
       p_name: name.trim(),
-      p_avatar: avatar,
+      p_avatar: null,
     })
 
     if (rpcErr || !data?.success) {
@@ -53,7 +45,7 @@ export default function JoinForm({ prefillCode = '' }: { prefillCode?: string })
       playerId: data.player_id,
       roomCode: code,
       name: name.trim(),
-      avatar,
+      avatar: null,
     })
 
     router.push(`/play/${code}`)
@@ -94,29 +86,6 @@ export default function JoinForm({ prefillCode = '' }: { prefillCode?: string })
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">
-          Avatar <span className="text-gray-500">(optional)</span>
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {AVATARS.map((seed) => (
-            <button
-              key={seed}
-              type="button"
-              onClick={() => setAvatar(avatar === seed ? null : seed)}
-              className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all hover:scale-110 active:scale-95 ${
-                avatar === seed
-                  ? 'bg-brand-500/40 ring-2 ring-brand-400 scale-110 shadow-lg shadow-brand-500/30'
-                  : 'bg-white/10 hover:bg-white/20'
-              }`}
-              id={`avatar-${seed}`}
-            >
-              <AvatarImage avatar={seed} className="w-10 h-10" />
-            </button>
-          ))}
-        </div>
-      </div>
-
       {error && (
         <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
           {error}
@@ -134,3 +103,4 @@ export default function JoinForm({ prefillCode = '' }: { prefillCode?: string })
     </form>
   )
 }
+

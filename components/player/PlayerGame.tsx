@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getPlayerSession, clearPlayerSession } from '@/lib/session'
+import { getPlayerSession, clearPlayerSession, savePlayerSession } from '@/lib/session'
 import { usePlayerChannel } from '@/hooks/usePlayerChannel'
 import { useServerClock } from '@/hooks/useServerClock'
 import JoinForm from '@/components/player/JoinForm'
 import AvatarImage from '@/components/AvatarImage'
+import AvatarCustomizer from '@/components/player/AvatarCustomizer'
 import type {
   NextQuestionPayload,
   ShowLeaderboardPayload,
@@ -158,13 +159,15 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
 
   if (phase === 'lobby') {
     return (
-      <FullScreenMessage
-        icon={session?.avatar ?? '🎮'}
-        title={`Hi, ${session?.name}!`}
-        text="Waiting for the host to start the game…"
-        sub="Keep this screen open"
-        pulse
-      />
+      <main className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-8 animate-fade-in">
+        <LobbyPlayerPanel
+          session={session!}
+          roomCode={roomCode}
+          onAvatarUpdated={(newAvatar) => {
+            setSession((prev) => prev ? { ...prev, avatar: newAvatar } : null)
+          }}
+        />
+      </main>
     )
   }
 
@@ -340,5 +343,60 @@ function FullScreenMessage({
     <main className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       {inner}
     </main>
+  )
+}
+
+function LobbyPlayerPanel({
+  session,
+  roomCode,
+  onAvatarUpdated,
+}: {
+  session: { playerId: string; name: string; avatar: string | null }
+  roomCode: string
+  onAvatarUpdated: (newAvatar: string) => void
+}) {
+  const [isEditing, setIsEditing] = useState(false)
+
+  return (
+    <div className="w-full max-w-md animate-fade-in">
+      <div className="glass-card p-8 text-center flex flex-col items-center justify-center relative overflow-hidden group">
+        {/* Decorative subtle background pulse */}
+        <div className="absolute inset-0 bg-brand-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+        {/* Interactive Avatar Container */}
+        <div className="relative mb-6">
+          <button
+            onClick={() => setIsEditing(true)}
+            className="relative flex items-center justify-center w-28 h-28 rounded-full bg-white/10 border-2 border-white/20 hover:border-brand-400 group-hover:scale-105 active:scale-95 transition-all duration-300 shadow-2xl overflow-hidden focus:outline-none cursor-pointer"
+            title="Customize Avatar"
+          >
+            <AvatarImage avatar={session.avatar} className="w-24 h-24" />
+            
+            {/* Hover overlay indicator */}
+            <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+              <span className="text-sm font-bold text-white tracking-wide">✏️ Customize</span>
+            </div>
+          </button>
+        </div>
+
+        <h2 className="text-2xl font-black mb-1 select-none">Hi, {session.name}!</h2>
+        <p className="text-gray-400 text-sm mb-8 select-none">Tap your avatar to customize it</p>
+
+        <div className="flex items-center justify-center gap-2 text-brand-400 font-bold">
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-brand-400 animate-pulse" />
+          <span className="text-sm tracking-wide">Waiting for host to start…</span>
+        </div>
+      </div>
+
+      {/* Advanced Customizer Overlay */}
+      {isEditing && (
+        <AvatarCustomizer
+          roomCode={roomCode}
+          session={session}
+          onClose={() => setIsEditing(false)}
+          onSave={onAvatarUpdated}
+        />
+      )}
+    </div>
   )
 }
