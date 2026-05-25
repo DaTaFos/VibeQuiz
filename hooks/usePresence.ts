@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { getPusherClient } from '@/lib/pusher'
 
 export interface PresencePlayer {
@@ -13,8 +13,17 @@ export interface PresencePlayer {
  * Presence hook for the lobby player list.
  * Host subscribes to see who joins; players track their own presence.
  */
-export function usePresence(roomCode: string, playerInfo?: PresencePlayer) {
+export function usePresence(
+  roomCode: string,
+  playerInfo?: PresencePlayer,
+  onPlayerAnswered?: (playerId: string) => void
+) {
   const [players, setPlayers] = useState<PresencePlayer[]>([])
+  const onPlayerAnsweredRef = useRef(onPlayerAnswered)
+
+  useEffect(() => {
+    onPlayerAnsweredRef.current = onPlayerAnswered
+  })
 
   useEffect(() => {
     if (!roomCode) return
@@ -51,6 +60,10 @@ export function usePresence(roomCode: string, playerInfo?: PresencePlayer) {
 
     channel.bind('pusher:member_removed', () => {
       updatePlayersList()
+    })
+
+    channel.bind('PLAYER_ANSWERED', (data: { playerId: string }) => {
+      onPlayerAnsweredRef.current?.(data.playerId)
     })
 
     return () => {

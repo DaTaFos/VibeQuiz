@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { getPusherClient } from '@/lib/pusher'
 import type {
   NextQuestionPayload,
@@ -32,6 +32,7 @@ export function usePlayerChannel(
 ) {
   const handlersRef = useRef(handlers)
   const playerInfoRef = useRef(playerInfo)
+  const channelRef = useRef<any>(null)
 
   // Keep refs up-to-date without triggering re-subscription
   useEffect(() => {
@@ -54,6 +55,7 @@ export function usePlayerChannel(
     const channelName = `presence-room-${roomCode}`
 
     const channel = pusher.subscribe(channelName)
+    channelRef.current = channel
 
     channel.bind('pusher:subscription_error', (status: any) => {
       console.error('Pusher subscription error:', status)
@@ -72,9 +74,31 @@ export function usePlayerChannel(
     })
 
     return () => {
+      channelRef.current = null
       channel.unbind_all()
       pusher.unsubscribe(channelName)
       pusher.disconnect()
     }
   }, [roomCode, playerId, playerName, playerAvatar]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const triggerAnswered = useCallback(async () => {
+    if (!roomCode || !playerId) return
+    try {
+      await fetch('/api/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomCode,
+          payload: {
+            type: 'PLAYER_ANSWERED',
+            playerId
+          }
+        }),
+      })
+    } catch (error) {
+      console.error('Failed to trigger player answered via API:', error)
+    }
+  }, [roomCode, playerId])
+
+  return { triggerAnswered }
 }

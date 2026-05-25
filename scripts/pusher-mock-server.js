@@ -136,6 +136,21 @@ wss.on('connection', (ws) => {
             channel: channel
           }));
         }
+      } else if (event && event.startsWith('client-')) {
+        const { channel, data: eventData } = msg;
+        const subscribers = channels.get(channel);
+        if (subscribers) {
+          const broadcastMsg = JSON.stringify({
+            event: event,
+            channel: channel,
+            data: typeof eventData === 'string' ? JSON.parse(eventData) : eventData
+          });
+          for (const [subId, sub] of subscribers) {
+            if (subId !== socketId) {
+              sub.ws.send(broadcastMsg);
+            }
+          }
+        }
       }
     } catch (e) {
       console.error('Error handling WebSocket message:', e);

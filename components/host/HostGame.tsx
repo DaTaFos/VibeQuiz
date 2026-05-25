@@ -22,15 +22,35 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [questionResults, setQuestionResults] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [answeredIds, setAnsweredIds] = useState<string[]>([])
 
   // Wall-clock timer — stores the active question's timing reference
   const activeTimerRef = useRef<{ startedAt: number; timeLimitSeconds: number } | null>(null)
   const phaseRef = useRef(phase)  // stable ref so timer callback can read latest phase
   const loadingRef = useRef(loading)
 
-  const { players } = usePresence(room.room_code)
+  const handlePlayerAnswered = useCallback((playerId: string) => {
+    setAnsweredIds((prev) => {
+      if (prev.includes(playerId)) return prev
+      return [...prev, playerId]
+    })
+  }, [])
+
+  const { players } = usePresence(room.room_code, undefined, handlePlayerAnswered)
   const { broadcastNextQuestion, broadcastLeaderboard, broadcastGameEnded } =
     useHostChannel(room.room_code)
+
+  // Auto-advance if 100% of active players have answered the question
+  useEffect(() => {
+    if (
+      phase === 'question' &&
+      players.length > 0 &&
+      answeredIds.length >= players.length &&
+      !loading
+    ) {
+      handleNext()
+    }
+  }, [answeredIds, players.length, phase, loading, handleNext])
 
   // Keep refs in sync with state
   useEffect(() => { phaseRef.current = phase }, [phase])
@@ -91,6 +111,7 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
     setPhase('question')
     setTimeLeft(q.time_limit)
     setQuestionResults(null)
+    setAnsweredIds([])
     activeTimerRef.current = null  // disarm while waiting for broadcast
 
     const startedAt = Date.now()
@@ -172,6 +193,8 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
         timeLeft={timeLeft}
         onNext={handleNext}
         loading={loading}
+        answeredCount={answeredIds.length}
+        totalPlayers={players.length}
       />
     )
   }
@@ -262,7 +285,7 @@ function LobbyView({
 }
 
 function QuestionView({
-  question, questionNumber, total, timeLeft, onNext, loading,
+  question, questionNumber, total, timeLeft, onNext, loading, answeredCount, totalPlayers,
 }: {
   question: Question
   questionNumber: number
@@ -270,6 +293,8 @@ function QuestionView({
   timeLeft: number
   onNext: () => void
   loading: boolean
+  answeredCount: number
+  totalPlayers: number
 }) {
   const pct = (timeLeft / question.time_limit) * 100
   const barColor = pct > 50 ? 'bg-green-500' : pct > 20 ? 'bg-yellow-400' : 'bg-red-500'
@@ -305,6 +330,18 @@ function QuestionView({
             </div>
           )
         })}
+      </div>
+
+      {/* Answered counter: Simple Fraction with Pop Up animation */}
+      <div className="glass-card p-6 mb-8 text-center flex flex-col items-center justify-center">
+        <div className="text-sm text-gray-400 font-medium mb-1">Players Answered</div>
+        <div className="text-4xl font-extrabold flex items-center gap-2">
+          <span key={answeredCount} className="inline-block animate-pop text-brand-400 text-5xl">
+            {answeredCount}
+          </span>
+          <span className="text-gray-500">/</span>
+          <span className="text-white text-3xl">{totalPlayers}</span>
+        </div>
       </div>
 
       <button

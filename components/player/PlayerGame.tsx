@@ -94,7 +94,7 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
   }, [])
 
   // Manage exactly ONE WebSocket channel for both broadcast events and presence tracking
-  usePlayerChannel(
+  const { triggerAnswered } = usePlayerChannel(
     roomCode,
     session ? { playerId: session.playerId, name: session.name, avatar: session.avatar } : null,
     { onNextQuestion, onShowLeaderboard, onGameEnded }
@@ -126,6 +126,7 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
       setAnswerResult({ isCorrect: data.is_correct, points: data.points })
       setMyScore((s) => s + (data.points ?? 0))
       setPhase('answered')
+      triggerAnswered()
     } else {
       // RPC failed — unlock so player can retry
       setSelectedOption(null)
