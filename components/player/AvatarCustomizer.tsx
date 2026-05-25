@@ -84,15 +84,14 @@ export default function AvatarCustomizer({ roomCode, session, onClose, onSave }:
   
   const EARRINGS_STYLES = ['none', 'variant01', 'variant02', 'variant03', 'variant04', 'variant05']
 
-  // Previews helpers
-  const getSkinPreview = (color: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=${color}&hair=short01&hairColor=0e0e0e&eyes=variant01&eyebrows=variant01&mouth=variant01`
-  const getHairPreview = (hair: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=f2d3b1&hair=${hair}&hairColor=0e0e0e&eyes=variant01&eyebrows=variant01&mouth=variant01`
-  const getEyesPreview = (eyes: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=f2d3b1&hair=short01&hairColor=0e0e0e&eyes=${eyes}&eyebrows=variant01&mouth=variant01`
-  const getEyebrowsPreview = (eyebrows: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=f2d3b1&hair=short01&hairColor=0e0e0e&eyes=variant01&eyebrows=${eyebrows}&mouth=variant01`
-  const getMouthPreview = (mouth: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=f2d3b1&hair=short01&hairColor=0e0e0e&eyes=variant01&eyebrows=variant01&mouth=${mouth}`
-  const getGlassesPreview = (glasses: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=f2d3b1&hair=short01&hairColor=0e0e0e&eyes=variant01&eyebrows=variant01&mouth=variant01${glasses === 'none' ? '&glassesProbability=0' : `&glassesProbability=100&glasses=${glasses}`}`
-  const getFeaturesPreview = (feature: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=f2d3b1&hair=short01&hairColor=0e0e0e&eyes=variant01&eyebrows=variant01&mouth=variant01${feature === 'none' ? '&featuresProbability=0' : `&featuresProbability=100&features=${feature}`}`
-  const getEarringsPreview = (earring: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=f2d3b1&hair=short01&hairColor=0e0e0e&eyes=variant01&eyebrows=variant01&mouth=variant01${earring === 'none' ? '&earringsProbability=0' : `&earringsProbability=100&earrings=${earring}`}`
+  // Previews helpers (isolated & transparent for focused display)
+  const getHairPreview = (hair: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=transparent&hair=${hair}&hairColor=${config.hairColor}&glassesProbability=0&featuresProbability=0&earringsProbability=0`
+  const getEyesPreview = (eyes: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=transparent&eyes=${eyes}&hairProbability=0&glassesProbability=0&featuresProbability=0&earringsProbability=0`
+  const getEyebrowsPreview = (eyebrows: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=transparent&eyebrows=${eyebrows}&hairProbability=0&glassesProbability=0&featuresProbability=0&earringsProbability=0`
+  const getMouthPreview = (mouth: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=transparent&mouth=${mouth}&hairProbability=0&glassesProbability=0&featuresProbability=0&earringsProbability=0`
+  const getGlassesPreview = (glasses: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=transparent&glasses=${glasses}&glassesProbability=100&hairProbability=0&featuresProbability=0&earringsProbability=0`
+  const getFeaturesPreview = (feature: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=transparent&features=${feature}&featuresProbability=100&hairProbability=0&glassesProbability=0&earringsProbability=0`
+  const getEarringsPreview = (earring: string) => `https://api.dicebear.com/9.x/adventurer/svg?skinColor=transparent&earrings=${earring}&earringsProbability=100&hairProbability=0&glassesProbability=0&featuresProbability=0`
 
   const handleRandomize = () => {
     setConfig({
@@ -200,17 +199,17 @@ export default function AvatarCustomizer({ roomCode, session, onClose, onSave }:
           {/* SKIN TONE */}
           <div>
             <h4 className="text-sm font-black text-gray-300 uppercase tracking-wider mb-3">Skin Tone</h4>
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-3">
               {SKIN_COLORS.map((color) => (
                 <button
                   key={color}
                   onClick={() => setConfig({ ...config, skinColor: color })}
-                  className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                    config.skinColor === color ? 'border-brand-400 ring-2 ring-brand-400/20 scale-105' : 'border-transparent'
+                  style={{ backgroundColor: `#${color}` }}
+                  className={`w-14 h-14 rounded-full border-2 transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                    config.skinColor === color ? 'border-white ring-4 ring-brand-500 scale-105 shadow-lg shadow-brand-500/20' : 'border-white/10 hover:border-white/20'
                   }`}
-                >
-                  <img src={getSkinPreview(color)} className="w-full h-full object-contain" alt="Skin" />
-                </button>
+                  title="Skin Tone Swatch"
+                />
               ))}
             </div>
           </div>
@@ -218,19 +217,19 @@ export default function AvatarCustomizer({ roomCode, session, onClose, onSave }:
           {/* HAIR STYLE */}
           <div>
             <h4 className="text-sm font-black text-gray-300 uppercase tracking-wider mb-3">Hair Style</h4>
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-3">
               {HAIR_STYLES.map((hair) => (
                 <button
                   key={hair}
                   onClick={() => setConfig({ ...config, hair })}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border bg-white/5 transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                    config.hair === hair ? 'border-brand-400 bg-brand-500/10 scale-105' : 'border-white/10 hover:border-white/20'
+                  className={`w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border bg-white/5 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                    config.hair === hair ? 'border-brand-400 bg-brand-500/10 scale-105 shadow-md shadow-brand-500/10' : 'border-white/10 hover:border-white/20'
                   }`}
                 >
                   {hair === 'none' ? (
-                    <div className="w-full h-full flex items-center justify-center text-lg font-bold text-gray-500">X</div>
+                    <div className="text-lg font-black text-gray-400">None</div>
                   ) : (
-                    <img src={getHairPreview(hair)} className="w-full h-full object-contain" alt="Hair" />
+                    <img src={getHairPreview(hair)} className="w-16 h-16 md:w-20 md:h-20 object-contain" alt="Hair Style" />
                   )}
                 </button>
               ))}
@@ -241,14 +240,14 @@ export default function AvatarCustomizer({ roomCode, session, onClose, onSave }:
           {config.hair !== 'none' && (
             <div>
               <h4 className="text-sm font-black text-gray-300 uppercase tracking-wider mb-3">Hair Color</h4>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {HAIR_COLORS.map((color) => (
                   <button
                     key={color}
                     onClick={() => setConfig({ ...config, hairColor: color })}
                     style={{ backgroundColor: `#${color}` }}
-                    className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 active:scale-95 cursor-pointer ${
-                      config.hairColor === color ? 'border-white ring-2 ring-brand-400 scale-110' : 'border-transparent'
+                    className={`w-12 h-12 rounded-full border-2 transition-all hover:scale-110 active:scale-95 cursor-pointer ${
+                      config.hairColor === color ? 'border-white ring-4 ring-brand-400 scale-110 shadow-lg shadow-brand-500/20' : 'border-white/10 hover:border-white/25'
                     }`}
                   />
                 ))}
@@ -259,16 +258,16 @@ export default function AvatarCustomizer({ roomCode, session, onClose, onSave }:
           {/* EYES */}
           <div>
             <h4 className="text-sm font-black text-gray-300 uppercase tracking-wider mb-3">Eyes</h4>
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-3">
               {EYES.map((eyesVal) => (
                 <button
                   key={eyesVal}
                   onClick={() => setConfig({ ...config, eyes: eyesVal })}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border bg-white/5 transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                    config.eyes === eyesVal ? 'border-brand-400 bg-brand-500/10 scale-105' : 'border-white/10 hover:border-white/20'
+                  className={`w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border bg-white/5 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                    config.eyes === eyesVal ? 'border-brand-400 bg-brand-500/10 scale-105 shadow-md shadow-brand-500/10' : 'border-white/10 hover:border-white/20'
                   }`}
                 >
-                  <img src={getEyesPreview(eyesVal)} className="w-full h-full object-contain" alt="Eyes" />
+                  <img src={getEyesPreview(eyesVal)} className="w-16 h-16 md:w-20 md:h-20 object-contain" alt="Eyes Style" />
                 </button>
               ))}
             </div>
@@ -277,16 +276,16 @@ export default function AvatarCustomizer({ roomCode, session, onClose, onSave }:
           {/* EYEBROWS */}
           <div>
             <h4 className="text-sm font-black text-gray-300 uppercase tracking-wider mb-3">Eyebrows</h4>
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-3">
               {EYEBROWS.map((eyebrowsVal) => (
                 <button
                   key={eyebrowsVal}
                   onClick={() => setConfig({ ...config, eyebrows: eyebrowsVal })}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border bg-white/5 transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                    config.eyebrows === eyebrowsVal ? 'border-brand-400 bg-brand-500/10 scale-105' : 'border-white/10 hover:border-white/20'
+                  className={`w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border bg-white/5 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                    config.eyebrows === eyebrowsVal ? 'border-brand-400 bg-brand-500/10 scale-105 shadow-md shadow-brand-500/10' : 'border-white/10 hover:border-white/20'
                   }`}
                 >
-                  <img src={getEyebrowsPreview(eyebrowsVal)} className="w-full h-full object-contain" alt="Eyebrows" />
+                  <img src={getEyebrowsPreview(eyebrowsVal)} className="w-16 h-16 md:w-20 md:h-20 object-contain" alt="Eyebrows Style" />
                 </button>
               ))}
             </div>
@@ -295,16 +294,16 @@ export default function AvatarCustomizer({ roomCode, session, onClose, onSave }:
           {/* MOUTH */}
           <div>
             <h4 className="text-sm font-black text-gray-300 uppercase tracking-wider mb-3">Mouth</h4>
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-3">
               {MOUTHS.map((mouthVal) => (
                 <button
                   key={mouthVal}
                   onClick={() => setConfig({ ...config, mouth: mouthVal })}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border bg-white/5 transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                    config.mouth === mouthVal ? 'border-brand-400 bg-brand-500/10 scale-105' : 'border-white/10 hover:border-white/20'
+                  className={`w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border bg-white/5 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                    config.mouth === mouthVal ? 'border-brand-400 bg-brand-500/10 scale-105 shadow-md shadow-brand-500/10' : 'border-white/10 hover:border-white/20'
                   }`}
                 >
-                  <img src={getMouthPreview(mouthVal)} className="w-full h-full object-contain" alt="Mouth" />
+                  <img src={getMouthPreview(mouthVal)} className="w-16 h-16 md:w-20 md:h-20 object-contain" alt="Mouth Style" />
                 </button>
               ))}
             </div>
@@ -313,41 +312,41 @@ export default function AvatarCustomizer({ roomCode, session, onClose, onSave }:
           {/* GLASSES */}
           <div>
             <h4 className="text-sm font-black text-gray-300 uppercase tracking-wider mb-3">Glasses</h4>
-            <div className="flex flex-wrap gap-2.5 mb-3">
+            <div className="flex flex-wrap gap-3">
               {GLASSES_STYLES.map((glassesVal) => (
                 <button
                   key={glassesVal}
                   onClick={() => setConfig({ ...config, glasses: glassesVal })}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border bg-white/5 transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                    config.glasses === glassesVal ? 'border-brand-400 bg-brand-500/10 scale-105' : 'border-white/10 hover:border-white/20'
+                  className={`w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border bg-white/5 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                    config.glasses === glassesVal ? 'border-brand-400 bg-brand-500/10 scale-105 shadow-md shadow-brand-500/10' : 'border-white/10 hover:border-white/20'
                   }`}
                 >
                   {glassesVal === 'none' ? (
-                    <div className="w-full h-full flex items-center justify-center text-lg font-bold text-gray-500">X</div>
+                    <div className="text-lg font-black text-gray-400">None</div>
                   ) : (
-                    <img src={getGlassesPreview(glassesVal)} className="w-full h-full object-contain" alt="Glasses" />
+                    <img src={getGlassesPreview(glassesVal)} className="w-16 h-16 md:w-20 md:h-20 object-contain" alt="Glasses Style" />
                   )}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* FEATURES (Mustache, Blush, Freckles) */}
+          {/* SPECIAL FEATURES */}
           <div>
             <h4 className="text-sm font-black text-gray-300 uppercase tracking-wider mb-3">Special Features</h4>
-            <div className="flex flex-wrap gap-2.5 mb-3">
+            <div className="flex flex-wrap gap-3">
               {FEATURES_STYLES.map((featureVal) => (
                 <button
                   key={featureVal}
                   onClick={() => setConfig({ ...config, features: featureVal })}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border bg-white/5 transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                    config.features === featureVal ? 'border-brand-400 bg-brand-500/10 scale-105' : 'border-white/10 hover:border-white/20'
+                  className={`w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border bg-white/5 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                    config.features === featureVal ? 'border-brand-400 bg-brand-500/10 scale-105 shadow-md shadow-brand-500/10' : 'border-white/10 hover:border-white/20'
                   }`}
                 >
                   {featureVal === 'none' ? (
-                    <div className="w-full h-full flex items-center justify-center text-lg font-bold text-gray-500">X</div>
+                    <div className="text-lg font-black text-gray-400">None</div>
                   ) : (
-                    <img src={getFeaturesPreview(featureVal)} className="w-full h-full object-contain" alt="Features" />
+                    <img src={getFeaturesPreview(featureVal)} className="w-16 h-16 md:w-20 md:h-20 object-contain" alt="Features Style" />
                   )}
                 </button>
               ))}
@@ -357,19 +356,19 @@ export default function AvatarCustomizer({ roomCode, session, onClose, onSave }:
           {/* EARRINGS */}
           <div>
             <h4 className="text-sm font-black text-gray-300 uppercase tracking-wider mb-3">Earrings</h4>
-            <div className="flex flex-wrap gap-2.5 mb-3">
+            <div className="flex flex-wrap gap-3">
               {EARRINGS_STYLES.map((earringVal) => (
                 <button
                   key={earringVal}
                   onClick={() => setConfig({ ...config, earrings: earringVal })}
-                  className={`w-12 h-12 rounded-xl overflow-hidden border bg-white/5 transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                    config.earrings === earringVal ? 'border-brand-400 bg-brand-500/10 scale-105' : 'border-white/10 hover:border-white/20'
+                  className={`w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border bg-white/5 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                    config.earrings === earringVal ? 'border-brand-400 bg-brand-500/10 scale-105 shadow-md shadow-brand-500/10' : 'border-white/10 hover:border-white/20'
                   }`}
                 >
                   {earringVal === 'none' ? (
-                    <div className="w-full h-full flex items-center justify-center text-lg font-bold text-gray-500">X</div>
+                    <div className="text-lg font-black text-gray-400">None</div>
                   ) : (
-                    <img src={getEarringsPreview(earringVal)} className="w-full h-full object-contain" alt="Earrings" />
+                    <img src={getEarringsPreview(earringVal)} className="w-16 h-16 md:w-20 md:h-20 object-contain" alt="Earrings Style" />
                   )}
                 </button>
               ))}
