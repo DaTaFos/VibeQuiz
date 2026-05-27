@@ -30,6 +30,36 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
+  // Check maintenance mode
+  const { pathname } = request.nextUrl
+  const isMaintenancePage = pathname === '/maintenance'
+  
+  if (!pathname.startsWith('/api') && !pathname.startsWith('/_next') && !pathname.includes('.')) {
+    try {
+      const { data: settings } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'maintenance_mode')
+        .single()
+
+      const isMaintenanceActive = settings?.value?.active === true
+
+      if (isMaintenanceActive && !isMaintenancePage) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/maintenance'
+        return NextResponse.redirect(url)
+      }
+
+      if (!isMaintenanceActive && isMaintenancePage) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/'
+        return NextResponse.redirect(url)
+      }
+    } catch (err) {
+      console.error('⚠️ Middleware Maintenance Mode check failed:', err)
+    }
+  }
+
   // Refresh session (do not remove this line)
   const { data: { user } } = await supabase.auth.getUser()
 
