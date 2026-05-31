@@ -22,6 +22,7 @@ export interface Question {
   option_b: string
   option_c: string
   option_d: string
+  image_url: string | null
   // correct_option intentionally omitted — server-side only
 }
 
@@ -63,6 +64,7 @@ export interface NextQuestionPayload {
   timeLimitSeconds: number
   startedAt: number  // unix ms — when the question timer started
   serverTime: number // unix ms — server wall clock at broadcast time (for offset calibration)
+  imageUrl?: string | null
 }
 
 export interface ShowLeaderboardPayload {

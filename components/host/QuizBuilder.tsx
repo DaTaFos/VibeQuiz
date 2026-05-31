@@ -31,6 +31,7 @@ type DraftQuestion = {
   correct_option: 'A' | 'B' | 'C' | 'D'
   time_limit: number
   max_points: number
+  image_url: string | null
 }
 
 function emptyQuestion(): DraftQuestion {
@@ -43,6 +44,7 @@ function emptyQuestion(): DraftQuestion {
     correct_option: 'A',
     time_limit: 30,
     max_points: 1000,
+    image_url: null,
   }
 }
 
@@ -142,6 +144,7 @@ export default function QuizBuilder({
         correct_option: q.correct_option,
         time_limit: q.time_limit,
         max_points: q.max_points,
+        image_url: q.image_url,
       }))
 
       const { error: qInsertErr } = await supabase.from('questions').insert(rows)
@@ -293,6 +296,12 @@ function QuestionCard({
             />
           </div>
 
+          <QuestionImageInput
+            imageUrl={q.image_url}
+            onChange={(url) => onChange({ image_url: url })}
+            idx={idx}
+          />
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {OPTION_LETTERS.map((letter, li) => {
               const key = optionKeys[li]
@@ -362,6 +371,155 @@ function QuestionCard({
               </select>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function QuestionImageInput({
+  imageUrl,
+  onChange,
+  idx,
+}: {
+  imageUrl: string | null
+  onChange: (url: string | null) => void
+  idx: number
+}) {
+  const supabase = createClient()
+  const [activeTab, setActiveTab] = useState<'upload' | 'url'>(imageUrl?.startsWith('http') ? 'url' : 'upload')
+  const [uploading, setUploading] = useState(false)
+  const [inputUrl, setInputUrl] = useState(imageUrl ?? '')
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Limit to 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File is too large. Max limit is 5MB.')
+      return
+    }
+
+    setUploading(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
+      const filePath = `question-images/${fileName}`
+
+      const { data, error } = await supabase.storage
+        .from('question-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+      if (error) throw error
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('question-images')
+        .getPublicUrl(filePath)
+
+      onChange(publicUrl)
+    } catch (err: any) {
+      alert(err.message || 'Error uploading file')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleUrlSubmit = () => {
+    if (inputUrl.trim()) {
+      onChange(inputUrl.trim())
+    } else {
+      onChange(null)
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <label className="block text-sm font-medium text-gray-300">Question Image (Optional)</label>
+      
+      {imageUrl ? (
+        <div className="relative inline-block group">
+          <div className="relative rounded-xl overflow-hidden border border-white/10 glass-card p-1.5 shadow-2xl">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imageUrl} alt="Question preview" className="max-h-48 rounded-lg object-contain" />
+            <button
+              onClick={() => {
+                onChange(null)
+                setInputUrl('')
+              }}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-red-600/90 text-white flex items-center justify-center font-bold hover:bg-red-700 hover:scale-105 active:scale-95 transition-all shadow-lg focus:outline-none"
+              title="Remove image"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="border border-white/10 rounded-xl bg-white/[0.02] p-4">
+          <div className="flex gap-2 mb-4 border-b border-white/10 pb-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab('upload')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all ${
+                activeTab === 'upload'
+                  ? 'bg-brand-500/20 text-brand-300 border border-brand-400/30'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+              }`}
+            >
+              📁 Upload File
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('url')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all ${
+                activeTab === 'url'
+                  ? 'bg-brand-500/20 text-brand-300 border border-brand-400/30'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+              }`}
+            >
+              🔗 Image URL
+            </button>
+          </div>
+
+          {activeTab === 'upload' ? (
+            <div className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-lg p-6 hover:border-brand-500/50 hover:bg-white/[0.01] transition-all cursor-pointer relative">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                disabled={uploading}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                id={`q-image-upload-${idx}`}
+              />
+              <div className="text-center space-y-1">
+                <span className="text-2xl">{uploading ? '⏳' : '🖼️'}</span>
+                <p className="text-sm font-medium text-white/80">
+                  {uploading ? 'Uploading image...' : 'Click or drag image file here'}
+                </p>
+                <p className="text-xs text-gray-500">PNG, JPG, WEBP or GIF (Max 5MB)</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                value={inputUrl}
+                onChange={(e) => setInputUrl(e.target.value)}
+                placeholder="Paste image URL here... (e.g. https://example.com/photo.jpg)"
+                className="input-field flex-1"
+                id={`q-image-url-input-${idx}`}
+              />
+              <button
+                type="button"
+                onClick={handleUrlSubmit}
+                className="btn-primary py-2 px-4 shrink-0 text-sm"
+              >
+                Apply
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

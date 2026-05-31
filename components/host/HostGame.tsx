@@ -124,6 +124,7 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
       timeLimitSeconds: q.time_limit,
       startedAt,
       serverTime: startedAt,
+      imageUrl: q.image_url,
     })
 
     // Arm timer after broadcast — host and player both start from the same startedAt
@@ -410,6 +411,18 @@ function QuestionView({
           style={{ width: `${pct}%` }}
         />
       </div>
+
+      {/* Question Image (Optional) */}
+      {question.image_url && (
+        <div className="relative mb-6 rounded-2xl overflow-hidden border border-white/10 glass-card p-2 flex justify-center items-center shadow-2xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={question.image_url}
+            alt="Question"
+            className="max-h-72 w-full object-contain rounded-xl"
+          />
+        </div>
+      )}
 
       <div className="glass-card p-8 mb-8 text-center">
         <p className="text-2xl font-bold leading-snug">{question.text}</p>

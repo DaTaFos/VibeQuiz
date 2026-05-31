@@ -23,7 +23,7 @@ export default async function HostLobbyPage({ params }: { params: Promise<{ id: 
   // Fetch questions for this quiz
   const { data: questions } = await supabase
     .from('questions')
-    .select('id, quiz_id, position, text, time_limit, max_points, option_a, option_b, option_c, option_d')
+    .select('id, quiz_id, position, text, time_limit, max_points, option_a, option_b, option_c, option_d, image_url')
     // NOTE: correct_option deliberately excluded from select — it will not be passed to client
     .eq('quiz_id', id)
     .order('position')

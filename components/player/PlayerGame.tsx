@@ -224,6 +224,18 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
           </div>
         </div>
 
+        {/* Question Image (Optional) */}
+        {q.imageUrl && (
+          <div className="relative mb-4 rounded-2xl overflow-hidden border border-white/10 glass-card p-1.5 flex justify-center items-center shadow-xl flex-shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={q.imageUrl}
+              alt="Question"
+              className="max-h-48 w-full object-contain rounded-xl"
+            />
+          </div>
+        )}
+
         {/* Question */}
         <div className="glass-card p-6 mb-6 text-center flex-shrink-0">
           <p className="text-xl font-bold leading-snug">{q.text}</p>
