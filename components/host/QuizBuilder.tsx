@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Question } from '@/lib/types'
@@ -391,6 +391,10 @@ function QuestionImageInput({
   const [uploading, setUploading] = useState(false)
   const [inputUrl, setInputUrl] = useState(imageUrl ?? '')
 
+  useEffect(() => {
+    setInputUrl(imageUrl ?? '')
+  }, [imageUrl])
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -487,6 +491,7 @@ function QuestionImageInput({
           {activeTab === 'upload' ? (
             <div className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-lg p-6 hover:border-brand-500/50 hover:bg-white/[0.01] transition-all cursor-pointer relative">
               <input
+                key="file-upload-input"
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
@@ -505,6 +510,7 @@ function QuestionImageInput({
           ) : (
             <div className="flex gap-2">
               <input
+                key="url-text-input"
                 value={inputUrl}
                 onChange={(e) => setInputUrl(e.target.value)}
                 placeholder="Paste image URL here... (e.g. https://example.com/photo.jpg)"
