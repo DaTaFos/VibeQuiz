@@ -479,15 +479,34 @@ function LeaderboardView({
   const RANK_STYLES = ['🥇', '🥈', '🥉']
   const OPTION_LABELS = ['A', 'B', 'C', 'D']
 
+  const [revealStep, setRevealStep] = useState(0)
+
+  // Staggered sequential reveals for suspense building
+  useEffect(() => {
+    if (!isFinal) return
+
+    const t1 = setTimeout(() => setRevealStep(1), 1000)   // Reveal 3rd place at 1.0s
+    const t2 = setTimeout(() => setRevealStep(2), 3500)   // Reveal 2nd place at 3.5s
+    const t3 = setTimeout(() => setRevealStep(3), 6000)   // Reveal 1st place at 6.0s
+    const t4 = setTimeout(() => setRevealStep(4), 8500)   // Reveal runner-ups/actions at 8.5s
+
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
+      clearTimeout(t4)
+    }
+  }, [isFinal])
+
   // Podium partitions
   const podiumPlayers = isFinal ? players.slice(0, 3) : []
   const runnerUpPlayers = isFinal ? players.slice(3, 10) : players.slice(0, 10)
 
   // Podium positions ordering: 2nd, 1st, 3rd from left to right
   const podiumOrder = [
-    { place: 2, index: 1, height: 'h-40 sm:h-44', border: 'border-slate-300/30', bg: 'bg-slate-300/[0.03]', shadow: 'shadow-slate-300/5 shadow-2xl', text: 'text-slate-300', icon: '🥈', delay: '300ms' },
-    { place: 1, index: 0, height: 'h-52 sm:h-56', border: 'border-yellow-400/40', bg: 'bg-yellow-400/[0.04]', shadow: 'shadow-yellow-400/10 shadow-2xl', text: 'text-yellow-400', icon: '👑', delay: '500ms' },
-    { place: 3, index: 2, height: 'h-32 sm:h-36', border: 'border-amber-600/30', bg: 'bg-amber-600/[0.03]', shadow: 'shadow-amber-600/5 shadow-2xl', text: 'text-amber-600', icon: '🥉', delay: '100ms' },
+    { place: 2, index: 1, height: 'h-40 sm:h-44', border: 'border-slate-300/30', bg: 'bg-slate-300/[0.03]', shadow: 'shadow-slate-300/5 shadow-2xl', text: 'text-slate-300', icon: '🥈', delay: '0ms' },
+    { place: 1, index: 0, height: 'h-52 sm:h-56', border: 'border-yellow-400/60 ring-2 ring-yellow-400/20', bg: 'bg-yellow-400/[0.06]', shadow: 'shadow-yellow-500/25 shadow-2xl animate-pulse', text: 'text-yellow-400', icon: '👑', delay: '0ms' },
+    { place: 3, index: 2, height: 'h-32 sm:h-36', border: 'border-amber-600/30', bg: 'bg-amber-600/[0.03]', shadow: 'shadow-amber-600/5 shadow-2xl', text: 'text-amber-600', icon: '🥉', delay: '0ms' },
   ]
 
   return (
@@ -529,6 +548,11 @@ function LeaderboardView({
             // Only render podium columns if there are players to go in them
             if (!p && pos.index >= players.length) return null
 
+            // Suspense reveal steps filtering
+            if (pos.place === 3 && revealStep < 1) return <div key={pos.place} className="w-24 sm:w-36 flex flex-col items-center justify-end h-full" />
+            if (pos.place === 2 && revealStep < 2) return <div key={pos.place} className="w-24 sm:w-36 flex flex-col items-center justify-end h-full" />
+            if (pos.place === 1 && revealStep < 3) return <div key={pos.place} className="w-24 sm:w-36 flex flex-col items-center justify-end h-full" />
+
             return (
               <div key={pos.place} className="flex flex-col items-center justify-end h-full animate-podium-rise" style={{ animationDelay: pos.delay }}>
                 {p && (
@@ -568,34 +592,36 @@ function LeaderboardView({
       )}
 
       {/* Leaderboard or Runner-ups List */}
-      <div>
-        {isFinal && runnerUpPlayers.length > 0 && (
-          <h3 className="text-lg font-bold text-gray-400 mb-3 select-none">Runner-ups</h3>
-        )}
-
-        <div className="space-y-3 mb-8">
-          {runnerUpPlayers.map((p, i) => {
-            const actualIndex = isFinal ? i + 3 : i
-            return (
-              <div
-                key={p.name}
-                className={`glass-card px-5 py-4 flex items-center gap-4 animate-slide-up ${actualIndex < 3 ? 'ring-1 ring-yellow-500/20' : ''}`}
-                style={{ animationDelay: `${i * 50}ms` }}
-              >
-                <div className="text-2xl w-8 text-center">
-                  {actualIndex < 3 ? RANK_STYLES[actualIndex] : <span className="text-gray-500 text-lg font-bold">#{actualIndex + 1}</span>}
-                </div>
-                <AvatarImage avatar={p.avatar} className="w-8 h-8" />
-                <div className="flex-1 font-semibold">{p.name}</div>
-                <div className="font-black text-xl text-brand-300">{p.total_score.toLocaleString()}</div>
-              </div>
-            )
-          })}
-          {players.length === 0 && (
-            <p className="text-gray-500 text-center py-8">No scores yet</p>
+      {(!isFinal || revealStep >= 4) && (
+        <div className="animate-fade-in">
+          {isFinal && runnerUpPlayers.length > 0 && (
+            <h3 className="text-lg font-bold text-gray-400 mb-3 select-none">Runner-ups</h3>
           )}
+
+          <div className="space-y-3 mb-8">
+            {runnerUpPlayers.map((p, i) => {
+              const actualIndex = isFinal ? i + 3 : i
+              return (
+                <div
+                  key={p.name}
+                  className={`glass-card px-5 py-4 flex items-center gap-4 animate-slide-up ${actualIndex < 3 ? 'ring-1 ring-yellow-500/20' : ''}`}
+                  style={{ animationDelay: `${i * 50}ms` }}
+                >
+                  <div className="text-2xl w-8 text-center">
+                    {actualIndex < 3 ? RANK_STYLES[actualIndex] : <span className="text-gray-500 text-lg font-bold">#{actualIndex + 1}</span>}
+                  </div>
+                  <AvatarImage avatar={p.avatar} className="w-8 h-8" />
+                  <div className="flex-1 font-semibold">{p.name}</div>
+                  <div className="font-black text-xl text-brand-300">{p.total_score.toLocaleString()}</div>
+                </div>
+              )
+            })}
+            {players.length === 0 && (
+              <p className="text-gray-500 text-center py-8">No scores yet</p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {!isFinal && (
         <button
@@ -608,8 +634,8 @@ function LeaderboardView({
         </button>
       )}
 
-      {isFinal && (
-        <div className="text-center">
+      {isFinal && revealStep >= 4 && (
+        <div className="text-center animate-fade-in">
           <p className="text-gray-400 mb-4">Game over! Thanks for playing.</p>
           <a href="/host/dashboard" className="btn-primary inline-block">
             Back to Dashboard
