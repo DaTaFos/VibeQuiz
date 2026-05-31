@@ -16,7 +16,7 @@ import type {
   LeaderboardEntry,
 } from '@/lib/types'
 
-type GamePhase = 'loading' | 'not-found' | 'needs-join' | 'lobby' | 'question' | 'answered' | 'leaderboard' | 'finished'
+type GamePhase = 'loading' | 'not-found' | 'needs-join' | 'lobby' | 'question' | 'answered' | 'reveal' | 'leaderboard' | 'finished'
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'] as const
 const OPTION_CLASSES = {
@@ -37,6 +37,7 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [myScore, setMyScore] = useState(0)
   const [timeLeft, setTimeLeft] = useState(0)
+  const [revealPayload, setRevealPayload] = useState<ShowLeaderboardPayload | null>(null)
 
   // Wall-clock timer state — stores the active question's timing info
   const activeTimerRef = useRef<{ startedAt: number; timeLimitSeconds: number } | null>(null)
@@ -66,6 +67,23 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
     return () => clearInterval(id)
   }, [correctedNow])
 
+  // Auto-dismiss reveal screen after 4 seconds to transition to the leaderboard
+  useEffect(() => {
+    if (phase !== 'reveal') return
+
+    const timer = setTimeout(() => {
+      if (revealPayload) {
+        setLeaderboard(revealPayload.players)
+        setSelectedOption(null)
+        setAnswerResult(null)
+        setPhase('leaderboard')
+        setRevealPayload(null)
+      }
+    }, 4000)
+
+    return () => clearTimeout(timer)
+  }, [phase, revealPayload])
+
   const onNextQuestion = useCallback((payload: NextQuestionPayload) => {
     // Calibrate clock offset using server_time from broadcast
     calibrate(payload.serverTime)
@@ -83,10 +101,8 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
 
   const onShowLeaderboard = useCallback((payload: ShowLeaderboardPayload) => {
     activeTimerRef.current = null  // stop timer
-    setLeaderboard(payload.players)
-    setSelectedOption(null)
-    setAnswerResult(null)
-    setPhase('leaderboard')
+    setRevealPayload(payload)
+    setPhase('reveal')
   }, [])
 
   const onGameEnded = useCallback((payload: GameEndedPayload) => {
@@ -194,6 +210,75 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
                 <span className="w-2 h-2 rounded-full bg-brand-400 animate-bounce" style={{ animationDelay: '300ms' }} />
               </span>
               <span className="text-sm tracking-wide">Waiting for others to answer…</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  if (phase === 'reveal') {
+    const isCorrect = answerResult?.isCorrect ?? false
+    const didAnswer = selectedOption !== null
+    const points = answerResult?.points ?? 0
+
+    // Theme values matching state
+    let bgGradient = 'from-red-950/40 via-gray-950 to-gray-950'
+    let cardBorder = 'border-red-500/20'
+    let icon = '❌'
+    let titleText = 'INCORRECT'
+    let titleColor = 'text-red-400'
+    let pointsBadge = 'bg-red-500/10 border-red-500/20 text-red-400'
+    let subtext = "Don't worry, you'll get the next one! 💪"
+
+    if (!didAnswer) {
+      bgGradient = 'from-amber-950/40 via-gray-950 to-gray-950'
+      cardBorder = 'border-amber-500/20'
+      icon = '⏰'
+      titleText = "TIME'S UP"
+      titleColor = 'text-amber-400'
+      pointsBadge = 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+      subtext = 'Speed up next time to lock in those points! ⚡'
+    } else if (isCorrect) {
+      bgGradient = 'from-emerald-950/40 via-gray-950 to-gray-950'
+      cardBorder = 'border-emerald-500/20'
+      icon = '✨'
+      titleText = 'CORRECT!'
+      titleColor = 'text-emerald-400'
+      pointsBadge = 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+      subtext = 'Amazing job! Keep the streak going! 🔥'
+    }
+
+    return (
+      <main className={`min-h-screen bg-gradient-to-b ${bgGradient} flex flex-col items-center justify-center px-4 py-8 overflow-hidden`}>
+        <div className="w-full max-w-sm animate-fade-in relative z-10">
+          <div className={`glass-card p-10 text-center flex flex-col items-center justify-center border ${cardBorder} shadow-2xl relative`}>
+            {/* Glowing Big State Icon Container */}
+            <div className="relative flex items-center justify-center w-24 h-24 rounded-full bg-white/5 border border-white/10 shadow-inner mb-6 animate-bounce-in">
+              <span className="text-5xl select-none leading-none">{icon}</span>
+            </div>
+
+            <h2 className={`text-4xl font-black tracking-wide ${titleColor} mb-2 select-none`}>
+              {titleText}
+            </h2>
+            <p className="text-gray-400 text-sm mb-6 select-none font-medium px-2">
+              {subtext}
+            </p>
+
+            {/* Points Awarded Bubble */}
+            <div className={`inline-flex items-center gap-1.5 px-6 py-3 rounded-full border ${pointsBadge} font-black tracking-wider text-xl mb-10 shadow-lg scale-105 transition-transform duration-200 select-none`}>
+              {isCorrect ? `+${points.toLocaleString()} PTS` : '+0 PTS'}
+            </div>
+
+            {/* Loading leaderboard indicator at the bottom */}
+            <div className="w-full space-y-2">
+              <div className="flex justify-between text-xs text-gray-500 font-semibold tracking-wider select-none">
+                <span>LOADING LEADERBOARD</span>
+                <span className="animate-pulse">⌛</span>
+              </div>
+              <div className="h-1 bg-white/10 rounded-full overflow-hidden w-full">
+                <div className="h-full bg-brand-500 rounded-full animate-progress" />
+              </div>
             </div>
           </div>
         </div>

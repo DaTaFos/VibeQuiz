@@ -117,4 +117,14 @@
   .animate-shimmer {
     animation: shimmer 2s infinite ease-in-out;
   }
+
+  /* Progress bar shrink animation (4s) */
+  @keyframes progress-shrink {
+    0% { width: 100%; }
+    100% { width: 0%; }
+  }
+
+  .animate-progress {
+    animation: progress-shrink 4s linear forwards;
+  }
 }
