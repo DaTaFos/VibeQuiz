@@ -73,7 +73,7 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
       }
     }, 100)
     return () => clearInterval(id)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function fetchLeaderboard() {
@@ -225,7 +225,7 @@ export default function HostGame({ initialRoom, questions }: HostGameProps) {
       questions={questions}
       currentQ={currentQ}
       isFinal={true}
-      onNext={() => {}}
+      onNext={() => { }}
       nextLabel=""
       loading={false}
     />
@@ -251,7 +251,7 @@ function LobbyView({
   }, [])
 
   const joinUrl = origin ? `${origin}/play?code=${room.room_code}` : ''
-  const qrCodeUrl = joinUrl 
+  const qrCodeUrl = joinUrl
     ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinUrl)}&color=6366f1&bgcolor=ffffff&qzone=2`
     : ''
 
@@ -275,7 +275,7 @@ function LobbyView({
         {/* LEFT COLUMN: JOIN INFORMATION & QR CODE */}
         <div className="md:col-span-7 flex flex-col justify-between glass-card p-8 relative overflow-hidden select-none">
           <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl pointer-events-none" />
-          
+
           <div className="flex flex-col items-center justify-center text-center flex-1 py-6">
             <span className="text-xs font-black tracking-widest text-brand-400 uppercase mb-2">Room Code</span>
             <div className="text-7xl md:text-8xl font-black tracking-[0.15em] pl-[0.15em] bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent animate-pulse-glow">
@@ -293,7 +293,7 @@ function LobbyView({
               <p className="text-gray-400 text-sm leading-relaxed mb-4">
                 Scan the QR code with your mobile device to join instantly with the room code auto-filled!
               </p>
-              
+
               <button
                 type="button"
                 onClick={handleCopyLink}
@@ -306,9 +306,9 @@ function LobbyView({
             {/* Premium QR Code Image Container */}
             <div className="w-40 h-40 bg-white p-3 rounded-2xl flex items-center justify-center shadow-2xl relative group overflow-hidden border border-white/10 shrink-0 select-none animate-bounce-in">
               {qrCodeUrl ? (
-                <img 
-                  src={qrCodeUrl} 
-                  alt="Join Game QR Code" 
+                <img
+                  src={qrCodeUrl}
+                  alt="Join Game QR Code"
                   className="w-full h-full object-contain"
                   draggable={false}
                 />
@@ -481,22 +481,40 @@ function LeaderboardView({
 
   const [revealStep, setRevealStep] = useState(0)
 
-  // Staggered sequential reveals for suspense building
+  // Staggered sequential reveals based dynamically on player count to avoid blank delays
   useEffect(() => {
     if (!isFinal) return
 
-    const t1 = setTimeout(() => setRevealStep(1), 1000)   // Reveal 3rd place at 1.0s
-    const t2 = setTimeout(() => setRevealStep(2), 3500)   // Reveal 2nd place at 3.5s
-    const t3 = setTimeout(() => setRevealStep(3), 6000)   // Reveal 1st place at 6.0s
-    const t4 = setTimeout(() => setRevealStep(4), 8500)   // Reveal runner-ups/actions at 8.5s
+    const count = players.length
+    let t1: NodeJS.Timeout | undefined
+    let t2: NodeJS.Timeout | undefined
+    let t3: NodeJS.Timeout | undefined
+    let t4: NodeJS.Timeout | undefined
+
+    if (count === 1) {
+      // 1 Player: Skip 3rd & 2nd place. Reveal 1st place after 1.0s, show actions after 2.0s (1s after 1st)
+      t3 = setTimeout(() => setRevealStep(3), 1000)
+      t4 = setTimeout(() => setRevealStep(4), 2000)
+    } else if (count === 2) {
+      // 2 Players: Skip 3rd place. Reveal 2nd place after 1.0s, 1st place after 3.0s (2s gap), actions after 4.0s (1s after 1st)
+      t2 = setTimeout(() => setRevealStep(2), 1000)
+      t3 = setTimeout(() => setRevealStep(3), 3000)
+      t4 = setTimeout(() => setRevealStep(4), 4000)
+    } else {
+      // 3+ Players: Reveal 3rd after 1.0s, 2nd after 3.0s (2s gap), 1st after 5.0s (2s gap), actions after 6.0s (1s after 1st)
+      t1 = setTimeout(() => setRevealStep(1), 1000)
+      t2 = setTimeout(() => setRevealStep(2), 3000)
+      t3 = setTimeout(() => setRevealStep(3), 5000)
+      t4 = setTimeout(() => setRevealStep(4), 6000)
+    }
 
     return () => {
-      clearTimeout(t1)
-      clearTimeout(t2)
-      clearTimeout(t3)
-      clearTimeout(t4)
+      if (t1) clearTimeout(t1)
+      if (t2) clearTimeout(t2)
+      if (t3) clearTimeout(t3)
+      if (t4) clearTimeout(t4)
     }
-  }, [isFinal])
+  }, [isFinal, players.length])
 
   // Podium partitions
   const podiumPlayers = isFinal ? players.slice(0, 3) : []
@@ -544,7 +562,7 @@ function LeaderboardView({
         <div className="flex justify-center items-end gap-3 sm:gap-6 mb-12 mt-6 h-96">
           {podiumOrder.map((pos) => {
             const p = podiumPlayers[pos.index]
-            
+
             // Only render podium columns if there are players to go in them
             if (!p && pos.index >= players.length) return null
 
@@ -563,8 +581,8 @@ function LeaderboardView({
                     </div>
 
                     {/* Overlapping Avatar */}
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center bg-white/10 border ${pos.border} shadow-2xl relative z-10 translate-y-7`}>
-                      <AvatarImage avatar={p.avatar} className="w-11 h-11" />
+                    <div className={`w-20 h-20 rounded-full flex items-center justify-center bg-white/10 border ${pos.border} shadow-2xl relative z-10 translate-y-7`}>
+                      <AvatarImage avatar={p.avatar} className="w-17 h-17" />
                       <span className="absolute -top-3 right-0 text-xl leading-none">{pos.icon}</span>
                     </div>
                   </>
@@ -610,7 +628,7 @@ function LeaderboardView({
                   <div className="text-2xl w-8 text-center">
                     {actualIndex < 3 ? RANK_STYLES[actualIndex] : <span className="text-gray-500 text-lg font-bold">#{actualIndex + 1}</span>}
                   </div>
-                  <AvatarImage avatar={p.avatar} className="w-8 h-8" />
+                  <AvatarImage avatar={p.avatar} className="w-10 h-10" />
                   <div className="flex-1 font-semibold">{p.name}</div>
                   <div className="font-black text-xl text-brand-300">{p.total_score.toLocaleString()}</div>
                 </div>
