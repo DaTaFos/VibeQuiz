@@ -171,7 +171,37 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
     )
   }
 
-  if (phase === 'question' || phase === 'answered') {
+  if (phase === 'answered') {
+    return (
+      <main className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-sm animate-fade-in">
+          <div className="glass-card p-10 text-center flex flex-col items-center justify-center">
+            {/* Player avatar */}
+            <div className="relative flex items-center justify-center w-24 h-24 rounded-full bg-white/10 border border-white/10 shadow-2xl overflow-hidden mb-6 ring-4 ring-brand-500/10">
+              <AvatarImage avatar={session?.avatar ?? null} className="w-20 h-20" />
+            </div>
+
+            <h2 className="text-xl font-black text-white mb-1 select-none">Answer Locked In!</h2>
+            <p className="text-gray-500 text-sm mb-8 select-none">
+              Your answer has been submitted
+            </p>
+
+            {/* Pulsing waiting indicator */}
+            <div className="flex items-center justify-center gap-2.5 text-brand-400 font-bold">
+              <span className="flex gap-1">
+                <span className="w-2 h-2 rounded-full bg-brand-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 rounded-full bg-brand-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 rounded-full bg-brand-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+              </span>
+              <span className="text-sm tracking-wide">Waiting for others to answer…</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  if (phase === 'question') {
     const q = currentQuestion!
     const pct = (timeLeft / q.timeLimitSeconds) * 100
     const barColor = pct > 50 ? 'bg-green-500' : pct > 20 ? 'bg-yellow-400' : 'bg-red-500'
@@ -204,8 +234,6 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
           {OPTION_LETTERS.map((letter) => {
             const text = q.options[letter]
             const isSelected = selectedOption === letter
-            const isCorrect = phase === 'answered' && answerResult?.isCorrect && isSelected
-            const isWrong = phase === 'answered' && !answerResult?.isCorrect && isSelected
 
             return (
               <button
@@ -214,35 +242,18 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
                 disabled={!!selectedOption}
                 className={`answer-btn ${OPTION_CLASSES[letter]}
                   ${isSelected ? 'answer-btn-selected' : ''}
-                  ${isCorrect ? 'answer-btn-correct' : ''}
-                  ${isWrong ? 'answer-btn-incorrect' : ''}
                   ${!selectedOption ? '' : 'cursor-default'}
                 `}
                 id={`answer-${letter}`}
               >
                 <span className="font-black text-xl">{letter}</span>
                 <span className="text-base">{text}</span>
-                {isCorrect && <span className="ml-auto text-xl">✓</span>}
-                {isWrong && <span className="ml-auto text-xl">✗</span>}
               </button>
             )
           })}
         </div>
 
-        {/* Result feedback */}
-        {phase === 'answered' && answerResult && (
-          <div className={`mt-4 text-center py-4 rounded-2xl font-bold text-lg animate-bounce-in
-            ${answerResult.isCorrect ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-            {answerResult.isCorrect
-              ? `✓ Correct! +${answerResult.points} pts`
-              : '✗ Wrong answer'}
-            <div className="text-sm font-normal text-gray-400 mt-1">
-              Waiting for next question…
-            </div>
-          </div>
-        )}
-
-        {phase === 'question' && !selectedOption && (
+        {!selectedOption && (
           <div className="mt-4 text-center text-gray-500 text-sm">Tap an answer</div>
         )}
       </main>
