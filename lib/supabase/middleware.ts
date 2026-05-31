@@ -34,7 +34,7 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isMaintenancePage = pathname === '/maintenance'
   
-  if (!pathname.startsWith('/api') && !pathname.startsWith('/_next') && !pathname.includes('.')) {
+  if (process.env.NODE_ENV !== 'development' && !pathname.startsWith('/api') && !pathname.startsWith('/_next') && !pathname.includes('.')) {
     try {
       const { data: settings } = await supabase
         .from('system_settings')
