@@ -479,8 +479,19 @@ function LeaderboardView({
   const RANK_STYLES = ['🥇', '🥈', '🥉']
   const OPTION_LABELS = ['A', 'B', 'C', 'D']
 
+  // Podium partitions
+  const podiumPlayers = isFinal ? players.slice(0, 3) : []
+  const runnerUpPlayers = isFinal ? players.slice(3, 10) : players.slice(0, 10)
+
+  // Podium positions ordering: 2nd, 1st, 3rd from left to right
+  const podiumOrder = [
+    { place: 2, index: 1, height: 'h-40 sm:h-44', border: 'border-slate-300/30', bg: 'bg-slate-300/[0.03]', shadow: 'shadow-slate-300/5 shadow-2xl', text: 'text-slate-300', icon: '🥈', delay: '300ms' },
+    { place: 1, index: 0, height: 'h-52 sm:h-56', border: 'border-yellow-400/40', bg: 'bg-yellow-400/[0.04]', shadow: 'shadow-yellow-400/10 shadow-2xl', text: 'text-yellow-400', icon: '👑', delay: '500ms' },
+    { place: 3, index: 2, height: 'h-32 sm:h-36', border: 'border-amber-600/30', bg: 'bg-amber-600/[0.03]', shadow: 'shadow-amber-600/5 shadow-2xl', text: 'text-amber-600', icon: '🥉', delay: '100ms' },
+  ]
+
   return (
-    <div className="max-w-2xl mx-auto px-4 py-10 animate-fade-in">
+    <div className={`mx-auto px-4 py-10 animate-fade-in ${isFinal ? 'max-w-4xl' : 'max-w-2xl'}`}>
       <h2 className="text-3xl font-black text-center mb-2">
         {isFinal ? '🏆 Final Results' : '📊 Leaderboard'}
       </h2>
@@ -509,25 +520,81 @@ function LeaderboardView({
         </div>
       )}
 
-      {/* Top players */}
-      <div className="space-y-3 mb-8">
-        {players.slice(0, 10).map((p, i) => (
-          <div
-            key={p.name}
-            className={`glass-card px-5 py-4 flex items-center gap-4 animate-slide-up ${i < 3 ? 'ring-1 ring-yellow-500/20' : ''}`}
-            style={{ animationDelay: `${i * 50}ms` }}
-          >
-            <div className="text-2xl w-8 text-center">
-              {i < 3 ? RANK_STYLES[i] : <span className="text-gray-500 text-lg font-bold">#{i + 1}</span>}
-            </div>
-            <AvatarImage avatar={p.avatar} className="w-8 h-8" />
-            <div className="flex-1 font-semibold">{p.name}</div>
-            <div className="font-black text-xl text-brand-300">{p.total_score.toLocaleString()}</div>
-          </div>
-        ))}
-        {players.length === 0 && (
-          <p className="text-gray-500 text-center py-8">No scores yet</p>
+      {/* Premium 3D Podium for Final Game Over Screen */}
+      {isFinal && players.length > 0 && (
+        <div className="flex justify-center items-end gap-3 sm:gap-6 mb-12 mt-6 h-96">
+          {podiumOrder.map((pos) => {
+            const p = podiumPlayers[pos.index]
+            
+            // Only render podium columns if there are players to go in them
+            if (!p && pos.index >= players.length) return null
+
+            return (
+              <div key={pos.place} className="flex flex-col items-center justify-end h-full animate-podium-rise" style={{ animationDelay: pos.delay }}>
+                {p && (
+                  <>
+                    {/* Name Badge */}
+                    <div className="bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/5 font-extrabold text-sm text-white mb-2 shadow-lg select-none truncate max-w-[100px] sm:max-w-[140px]">
+                      {p.name}
+                    </div>
+
+                    {/* Overlapping Avatar */}
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center bg-white/10 border ${pos.border} shadow-2xl relative z-10 translate-y-7`}>
+                      <AvatarImage avatar={p.avatar} className="w-11 h-11" />
+                      <span className="absolute -top-3 right-0 text-xl leading-none">{pos.icon}</span>
+                    </div>
+                  </>
+                )}
+
+                {/* Column block */}
+                <div
+                  className={`w-24 sm:w-36 rounded-t-2xl border ${pos.border} ${pos.bg} ${pos.shadow} ${pos.height} flex flex-col items-center justify-center pt-8 pb-4`}
+                >
+                  {p ? (
+                    <>
+                      <span className={`text-5xl sm:text-6xl font-black ${pos.text} opacity-80 leading-none mb-2 select-none`}>
+                        {pos.place}
+                      </span>
+                      <span className="text-xs sm:text-sm font-extrabold text-white/90 tracking-wide select-none">
+                        {p.total_score.toLocaleString()} pts
+                      </span>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Leaderboard or Runner-ups List */}
+      <div>
+        {isFinal && runnerUpPlayers.length > 0 && (
+          <h3 className="text-lg font-bold text-gray-400 mb-3 select-none">Runner-ups</h3>
         )}
+
+        <div className="space-y-3 mb-8">
+          {runnerUpPlayers.map((p, i) => {
+            const actualIndex = isFinal ? i + 3 : i
+            return (
+              <div
+                key={p.name}
+                className={`glass-card px-5 py-4 flex items-center gap-4 animate-slide-up ${actualIndex < 3 ? 'ring-1 ring-yellow-500/20' : ''}`}
+                style={{ animationDelay: `${i * 50}ms` }}
+              >
+                <div className="text-2xl w-8 text-center">
+                  {actualIndex < 3 ? RANK_STYLES[actualIndex] : <span className="text-gray-500 text-lg font-bold">#{actualIndex + 1}</span>}
+                </div>
+                <AvatarImage avatar={p.avatar} className="w-8 h-8" />
+                <div className="flex-1 font-semibold">{p.name}</div>
+                <div className="font-black text-xl text-brand-300">{p.total_score.toLocaleString()}</div>
+              </div>
+            )
+          })}
+          {players.length === 0 && (
+            <p className="text-gray-500 text-center py-8">No scores yet</p>
+          )}
+        </div>
       </div>
 
       {!isFinal && (

@@ -127,4 +127,15 @@
   .animate-progress {
     animation: progress-shrink 4s linear forwards;
   }
+
+  /* Podium column dramatic rise animation */
+  @keyframes slide-up-podium {
+    0% { transform: translateY(220px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  .animate-podium-rise {
+    opacity: 0;
+    animation: slide-up-podium 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
 }
