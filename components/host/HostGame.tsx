@@ -543,7 +543,7 @@ function LeaderboardView({
   ]
 
   return (
-    <div className={`mx-auto px-4 py-10 animate-fade-in ${isFinal ? 'max-w-4xl' : 'max-w-5xl'}`}>
+    <div className={`mx-auto px-4 py-10 animate-fade-in ${isFinal ? 'max-w-4xl' : 'max-w-7xl'}`}>
       {/* Header with Title and Next Button */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 border-b border-white/5 pb-6">
         <div>
@@ -575,13 +575,13 @@ function LeaderboardView({
           {/* Left Column: Question Results bar graph */}
           <div className="lg:col-span-7">
             {questionResults && (
-              <div className="glass-card p-6 text-center animate-fade-in relative shadow-2xl border border-white/10 h-[460px] flex flex-col justify-between">
+              <div className="glass-card p-6 text-center animate-fade-in relative shadow-2xl border border-white/10 h-[540px] flex flex-col justify-between">
                 <div className="flex items-center justify-between select-none">
                   <span className="text-lg font-black tracking-wide text-gray-300">📊 Question Results</span>
                   <span className="text-xs font-semibold text-white/40">{questionResults.total_responses || 0} answers</span>
                 </div>
 
-                <div className="h-64 sm:h-72 flex items-end justify-between gap-3 sm:gap-6 px-2 mb-4 border-b border-white/10 pb-2 relative flex-1 mt-4">
+                <div className="h-80 sm:h-[360px] flex items-end justify-between gap-4 sm:gap-8 px-2 mb-4 border-b border-white/10 pb-2 relative flex-1 mt-4">
                   {OPTION_LABELS.map((letter) => {
                     const count = questionResults.distribution?.[letter] ?? 0
                     const total = questionResults.total_responses || 1
@@ -704,7 +704,7 @@ function LeaderboardView({
 
           {/* Right Column: Leaderboard rankings list (constrained height + scrollable) */}
           <div className="lg:col-span-5">
-            <div className="glass-card p-6 animate-fade-in relative shadow-2xl border border-white/10 h-[460px] flex flex-col justify-between">
+            <div className="glass-card p-6 animate-fade-in relative shadow-2xl border border-white/10 h-[540px] flex flex-col justify-between">
               <div className="flex items-center justify-between mb-4 select-none">
                 <span className="text-lg font-black tracking-wide text-gray-300">🏆 Current Rankings</span>
                 <span className="text-xs font-semibold text-brand-300">{players.length} players</span>
