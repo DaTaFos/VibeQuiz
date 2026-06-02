@@ -440,15 +440,26 @@ function QuestionView({
         })}
       </div>
 
-      {/* Answered counter: Simple Fraction with Pop Up animation */}
-      <div className="glass-card p-6 mb-8 text-center flex flex-col items-center justify-center">
-        <div className="text-sm text-gray-400 font-medium mb-1">Players Answered</div>
-        <div className="text-4xl font-extrabold flex items-center gap-2">
+      {/* Answered counter: Simple Fraction with Pop Up animation & Spring progress bar */}
+      <div className="glass-card p-6 mb-8 text-center flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="text-sm text-gray-400 font-medium mb-1 z-10 select-none">Players Answered</div>
+        <div className="text-4xl font-extrabold flex items-center gap-2 mb-4 z-10">
           <span key={answeredCount} className="inline-block animate-pop text-brand-400 text-5xl">
             {answeredCount}
           </span>
           <span className="text-gray-500">/</span>
           <span className="text-white text-3xl">{totalPlayers}</span>
+        </div>
+
+        {/* Dynamic Spring-like horizontal progress bar */}
+        <div className="w-full max-w-md h-3 bg-white/10 rounded-full overflow-hidden border border-white/5 p-[2px] z-10 relative">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-brand-600 to-brand-400 shadow-[0_0_12px_rgba(41,82,245,0.4)]"
+            style={{
+              width: `${totalPlayers > 0 ? (answeredCount / totalPlayers) * 100 : 0}%`,
+              transition: 'width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            }}
+          />
         </div>
       </div>
 
