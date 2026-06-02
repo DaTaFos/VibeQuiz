@@ -544,10 +544,30 @@ function LeaderboardView({
 
   return (
     <div className={`mx-auto px-4 py-10 animate-fade-in ${isFinal ? 'max-w-4xl' : 'max-w-2xl'}`}>
-      <h2 className="text-3xl font-black text-center mb-2">
-        {isFinal ? '🏆 Final Results' : '📊 Leaderboard'}
-      </h2>
-      {!isFinal && <p className="text-gray-400 text-center text-sm mb-8">After question {currentQ + 1}</p>}
+      {/* Header with Title and Next Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 border-b border-white/5 pb-6">
+        <div>
+          <h2 className="text-3xl font-black text-center sm:text-left">
+            {isFinal ? '🏆 Final Results' : '📊 Leaderboard'}
+          </h2>
+          {!isFinal && (
+            <p className="text-gray-400 text-center sm:text-left text-sm mt-1">
+              After question {currentQ + 1}
+            </p>
+          )}
+        </div>
+
+        {!isFinal && (
+          <button
+            onClick={onNext}
+            disabled={loading}
+            className="btn-primary px-8 py-3 text-base sm:text-lg font-bold shadow-lg shadow-brand-500/20 active:scale-95 transition-all duration-200 select-none whitespace-nowrap self-center sm:self-auto"
+            id="host-continue-btn"
+          >
+            {loading ? 'Loading…' : nextLabel}
+          </button>
+        )}
+      </div>
 
       {/* Kahoot-style Answer distribution bar graph */}
       {questionResults && !isFinal && (
@@ -761,16 +781,6 @@ function LeaderboardView({
         </div>
       )}
 
-      {!isFinal && (
-        <button
-          onClick={onNext}
-          disabled={loading}
-          className="btn-primary w-full text-lg py-4"
-          id="host-continue-btn"
-        >
-          {loading ? 'Loading…' : nextLabel}
-        </button>
-      )}
 
       {isFinal && revealStep >= 4 && (
         <div className="text-center animate-fade-in">
