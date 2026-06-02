@@ -543,7 +543,7 @@ function LeaderboardView({
   ]
 
   return (
-    <div className={`mx-auto px-4 py-10 animate-fade-in ${isFinal ? 'max-w-4xl' : 'max-w-2xl'}`}>
+    <div className={`mx-auto px-4 py-10 animate-fade-in ${isFinal ? 'max-w-4xl' : 'max-w-5xl'}`}>
       {/* Header with Title and Next Button */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 border-b border-white/5 pb-6">
         <div>
@@ -569,216 +569,253 @@ function LeaderboardView({
         )}
       </div>
 
-      {/* Kahoot-style Answer distribution bar graph */}
-      {questionResults && !isFinal && (
-        <div className="glass-card p-6 mb-8 text-center animate-fade-in relative shadow-2xl border border-white/10">
-          <div className="flex items-center justify-between mb-6 select-none">
-            <span className="text-lg font-black tracking-wide text-gray-300">📊 Question Results</span>
-            <span className="text-xs font-semibold text-white/40">{questionResults.total_responses || 0} answers</span>
-          </div>
+      {/* Active gameplay results vs final celebration split */}
+      {!isFinal ? (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left Column: Question Results bar graph */}
+          <div className="lg:col-span-7">
+            {questionResults && (
+              <div className="glass-card p-6 text-center animate-fade-in relative shadow-2xl border border-white/10 h-[460px] flex flex-col justify-between">
+                <div className="flex items-center justify-between select-none">
+                  <span className="text-lg font-black tracking-wide text-gray-300">📊 Question Results</span>
+                  <span className="text-xs font-semibold text-white/40">{questionResults.total_responses || 0} answers</span>
+                </div>
 
-          <div className="h-64 sm:h-72 flex items-end justify-between gap-3 sm:gap-6 px-2 mb-4 border-b border-white/10 pb-2 relative">
-            {OPTION_LABELS.map((letter) => {
-              const count = questionResults.distribution?.[letter] ?? 0
-              const total = questionResults.total_responses || 1
-              const pct = Math.round((count / total) * 100)
-              const isCorrect = letter === questionResults.correct_option
+                <div className="h-64 sm:h-72 flex items-end justify-between gap-3 sm:gap-6 px-2 mb-4 border-b border-white/10 pb-2 relative flex-1 mt-4">
+                  {OPTION_LABELS.map((letter) => {
+                    const count = questionResults.distribution?.[letter] ?? 0
+                    const total = questionResults.total_responses || 1
+                    const pct = Math.round((count / total) * 100)
+                    const isCorrect = letter === questionResults.correct_option
 
-              // Define styling configurations for each option
-              const optionConfig = {
-                A: {
-                  bg: 'bg-gradient-to-t from-red-600 to-red-500',
-                  glow: 'shadow-red-500/10 hover:shadow-red-500/30',
-                },
-                B: {
-                  bg: 'bg-gradient-to-t from-blue-600 to-blue-500',
-                  glow: 'shadow-blue-500/10 hover:shadow-blue-500/30',
-                },
-                C: {
-                  bg: 'bg-gradient-to-t from-yellow-500 to-yellow-400',
-                  glow: 'shadow-yellow-500/10 hover:shadow-yellow-500/30',
-                },
-                D: {
-                  bg: 'bg-gradient-to-t from-green-600 to-green-500',
-                  glow: 'shadow-green-500/10 hover:shadow-green-500/30',
-                },
-              }[letter]
+                    // Define styling configurations for each option
+                    const optionConfig = {
+                      A: {
+                        bg: 'bg-gradient-to-t from-red-600 to-red-500',
+                        glow: 'shadow-red-500/10 hover:shadow-red-500/30',
+                      },
+                      B: {
+                        bg: 'bg-gradient-to-t from-blue-600 to-blue-500',
+                        glow: 'shadow-blue-500/10 hover:shadow-blue-500/30',
+                      },
+                      C: {
+                        bg: 'bg-gradient-to-t from-yellow-500 to-yellow-400',
+                        glow: 'shadow-yellow-500/10 hover:shadow-yellow-500/30',
+                      },
+                      D: {
+                        bg: 'bg-gradient-to-t from-green-600 to-green-500',
+                        glow: 'shadow-green-500/10 hover:shadow-green-500/30',
+                      },
+                    }[letter]
 
-              const heightVal = animatedHeights[letter]
+                    const heightVal = animatedHeights[letter]
 
-              return (
-                <div
-                  key={letter}
-                  className={`flex-1 flex flex-col items-center justify-end h-full transition-all duration-500 ${
-                    isCorrect ? 'opacity-100' : 'opacity-40 hover:opacity-60'
-                  }`}
-                >
-                  {/* Answer count & bouncy checkmark badge */}
-                  <div className="flex flex-col items-center mb-2 z-10 select-none">
-                    {isCorrect && (
-                      <div className="bg-green-500 text-white rounded-full p-1.5 shadow-lg shadow-green-500/30 animate-bounce mb-1">
-                        <svg className="w-3.5 h-3.5 stroke-[3.5px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
+                    return (
+                      <div
+                        key={letter}
+                        className={`flex-1 flex flex-col items-center justify-end h-full transition-all duration-500 ${
+                          isCorrect ? 'opacity-100' : 'opacity-40 hover:opacity-60'
+                        }`}
+                      >
+                        {/* Answer count & bouncy checkmark badge */}
+                        <div className="flex flex-col items-center mb-2 z-10 select-none">
+                          {isCorrect && (
+                            <div className="bg-green-500 text-white rounded-full p-1.5 shadow-lg shadow-green-500/30 animate-bounce mb-1">
+                              <svg className="w-3.5 h-3.5 stroke-[3.5px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          )}
+                          <span className="text-white font-extrabold text-base sm:text-xl drop-shadow-md">
+                            {count}
+                          </span>
+                        </div>
+
+                        {/* Vertical column bar */}
+                        <div
+                          className={`w-full ${optionConfig.bg} rounded-t-xl border-t border-white/20 shadow-lg ${optionConfig.glow} transition-[height] duration-1000 cubic-bezier(0.25, 1, 0.5, 1) flex flex-col items-center justify-end relative overflow-hidden`}
+                          style={{ height: `${Math.max(heightVal, 6)}%` }}
+                        >
+                          {/* Inner highlight for premium visual depth */}
+                          <div className="absolute inset-0 bg-white/[0.05] rounded-t-[10px]" />
+                        </div>
                       </div>
-                    )}
-                    <span className="text-white font-extrabold text-base sm:text-xl drop-shadow-md">
-                      {count}
-                    </span>
-                  </div>
-
-                  {/* Vertical column bar */}
-                  <div
-                    className={`w-full ${optionConfig.bg} rounded-t-xl border-t border-white/20 shadow-lg ${optionConfig.glow} transition-[height] duration-1000 cubic-bezier(0.25, 1, 0.5, 1) flex flex-col items-center justify-end relative overflow-hidden`}
-                    style={{ height: `${Math.max(heightVal, 6)}%` }}
-                  >
-                    {/* Inner highlight for premium visual depth */}
-                    <div className="absolute inset-0 bg-white/[0.05] rounded-t-[10px]" />
-                  </div>
+                    )
+                  })}
                 </div>
-              )
-            })}
-          </div>
 
-          {/* Option footers (geometric accessibility shapes & letters) */}
-          <div className="grid grid-cols-4 gap-3 sm:gap-6 px-2 mt-3 select-none">
-            {OPTION_LABELS.map((letter) => {
-              const total = questionResults.total_responses || 1
-              const count = questionResults.distribution?.[letter] ?? 0
-              const pct = Math.round((count / total) * 100)
-              const isCorrect = letter === questionResults.correct_option
+                {/* Option footers (geometric accessibility shapes & letters) */}
+                <div className="grid grid-cols-4 gap-3 sm:gap-6 px-2 select-none">
+                  {OPTION_LABELS.map((letter) => {
+                    const total = questionResults.total_responses || 1
+                    const count = questionResults.distribution?.[letter] ?? 0
+                    const pct = Math.round((count / total) * 100)
+                    const isCorrect = letter === questionResults.correct_option
 
-              const optionConfig = {
-                A: {
-                  shapeBg: 'bg-red-600',
-                  shape: (
-                    <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
-                      <path d="M12 3L2 21H22L12 3Z" />
-                    </svg>
-                  ),
-                },
-                B: {
-                  shapeBg: 'bg-blue-600',
-                  shape: (
-                    <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
-                      <path d="M12 2L2 12L12 22L22 12L12 2Z" />
-                    </svg>
-                  ),
-                },
-                C: {
-                  shapeBg: 'bg-yellow-500',
-                  shape: (
-                    <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="10" />
-                    </svg>
-                  ),
-                },
-                D: {
-                  shapeBg: 'bg-green-600',
-                  shape: (
-                    <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                    </svg>
-                  ),
-                },
-              }[letter]
+                    const optionConfig = {
+                      A: {
+                        shapeBg: 'bg-red-600',
+                        shape: (
+                          <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
+                            <path d="M12 3L2 21H22L12 3Z" />
+                          </svg>
+                        ),
+                      },
+                      B: {
+                        shapeBg: 'bg-blue-600',
+                        shape: (
+                          <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
+                            <path d="M12 2L2 12L12 22L22 12L12 2Z" />
+                          </svg>
+                        ),
+                      },
+                      C: {
+                        shapeBg: 'bg-yellow-500',
+                        shape: (
+                          <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" />
+                          </svg>
+                        ),
+                      },
+                      D: {
+                        shapeBg: 'bg-green-600',
+                        shape: (
+                          <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                          </svg>
+                        ),
+                      },
+                    }[letter]
 
-              return (
-                <div key={letter} className={`flex flex-col items-center transition-opacity duration-500 ${isCorrect ? 'opacity-100' : 'opacity-40'}`}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white ${optionConfig.shapeBg} shadow-md`}>
-                    {optionConfig.shape}
-                  </div>
-                  <span className="text-xs sm:text-sm font-black text-gray-200 mt-1">{letter}</span>
-                  <span className="text-[10px] sm:text-xs text-gray-400 font-bold leading-none">{pct}%</span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Premium 3D Podium for Final Game Over Screen */}
-      {isFinal && players.length > 0 && (
-        <div className="flex justify-center items-end gap-3 sm:gap-6 mb-12 mt-6 h-96">
-          {podiumOrder.map((pos) => {
-            const p = podiumPlayers[pos.index]
-
-            // Only render podium columns if there are players to go in them
-            if (!p && pos.index >= players.length) return null
-
-            // Suspense reveal steps filtering
-            if (pos.place === 3 && revealStep < 1) return <div key={pos.place} className="w-24 sm:w-36 flex flex-col items-center justify-end h-full" />
-            if (pos.place === 2 && revealStep < 2) return <div key={pos.place} className="w-24 sm:w-36 flex flex-col items-center justify-end h-full" />
-            if (pos.place === 1 && revealStep < 3) return <div key={pos.place} className="w-24 sm:w-36 flex flex-col items-center justify-end h-full" />
-
-            return (
-              <div key={pos.place} className="flex flex-col items-center justify-end h-full animate-podium-rise" style={{ animationDelay: pos.delay }}>
-                {p && (
-                  <>
-                    {/* Name Badge */}
-                    <div className="bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/5 font-extrabold text-sm text-white mb-2 shadow-lg select-none truncate max-w-[100px] sm:max-w-[140px]">
-                      {p.name}
-                    </div>
-
-                    {/* Overlapping Avatar */}
-                    <div className={`w-20 h-20 rounded-full flex items-center justify-center bg-white/10 border ${pos.border} shadow-2xl relative z-10 translate-y-7`}>
-                      <AvatarImage avatar={p.avatar} className="w-17 h-17" />
-                      <span className="absolute -top-3 right-0 text-xl leading-none">{pos.icon}</span>
-                    </div>
-                  </>
-                )}
-
-                {/* Column block */}
-                <div
-                  className={`w-24 sm:w-36 rounded-t-2xl border ${pos.border} ${pos.bg} ${pos.shadow} ${pos.height} flex flex-col items-center justify-center pt-8 pb-4`}
-                >
-                  {p ? (
-                    <>
-                      <span className={`text-5xl sm:text-6xl font-black ${pos.text} opacity-80 leading-none mb-2 select-none`}>
-                        {pos.place}
-                      </span>
-                      <span className="text-xs sm:text-sm font-extrabold text-white/90 tracking-wide select-none">
-                        {p.total_score.toLocaleString()} pts
-                      </span>
-                    </>
-                  ) : null}
+                    return (
+                      <div key={letter} className={`flex flex-col items-center transition-opacity duration-500 ${isCorrect ? 'opacity-100' : 'opacity-40'}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white ${optionConfig.shapeBg} shadow-md`}>
+                          {optionConfig.shape}
+                        </div>
+                        <span className="text-xs sm:text-sm font-black text-gray-200 mt-1">{letter}</span>
+                        <span className="text-[10px] sm:text-xs text-gray-400 font-bold leading-none">{pct}%</span>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Leaderboard or Runner-ups List */}
-      {(!isFinal || revealStep >= 4) && (
-        <div className="animate-fade-in">
-          {isFinal && runnerUpPlayers.length > 0 && (
-            <h3 className="text-lg font-bold text-gray-400 mb-3 select-none">Runner-ups</h3>
-          )}
-
-          <div className="space-y-3 mb-8">
-            {runnerUpPlayers.map((p, i) => {
-              const actualIndex = isFinal ? i + 3 : i
-              return (
-                <div
-                  key={p.name}
-                  className={`glass-card px-5 py-4 flex items-center gap-4 animate-slide-up ${actualIndex < 3 ? 'ring-1 ring-yellow-500/20' : ''}`}
-                  style={{ animationDelay: `${i * 50}ms` }}
-                >
-                  <div className="text-2xl w-8 text-center">
-                    {actualIndex < 3 ? RANK_STYLES[actualIndex] : <span className="text-gray-500 text-lg font-bold">#{actualIndex + 1}</span>}
-                  </div>
-                  <AvatarImage avatar={p.avatar} className="w-10 h-10" />
-                  <div className="flex-1 font-semibold">{p.name}</div>
-                  <div className="font-black text-xl text-brand-300">{p.total_score.toLocaleString()}</div>
-                </div>
-              )
-            })}
-            {players.length === 0 && (
-              <p className="text-gray-500 text-center py-8">No scores yet</p>
             )}
           </div>
+
+          {/* Right Column: Leaderboard rankings list (constrained height + scrollable) */}
+          <div className="lg:col-span-5">
+            <div className="glass-card p-6 animate-fade-in relative shadow-2xl border border-white/10 h-[460px] flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-4 select-none">
+                <span className="text-lg font-black tracking-wide text-gray-300">🏆 Current Rankings</span>
+                <span className="text-xs font-semibold text-brand-300">{players.length} players</span>
+              </div>
+
+              {/* Scrollable list container */}
+              <div className="flex-1 overflow-y-auto pr-1 space-y-2.5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                {runnerUpPlayers.map((p, i) => (
+                  <div
+                    key={p.name}
+                    className={`glass-card px-4 py-3 flex items-center gap-3 animate-slide-up ${i < 3 ? 'ring-1 ring-yellow-500/20' : ''}`}
+                    style={{ animationDelay: `${i * 50}ms` }}
+                  >
+                    <div className="text-xl w-6 text-center">
+                      {i < 3 ? RANK_STYLES[i] : <span className="text-gray-500 text-sm font-bold">#{i + 1}</span>}
+                    </div>
+                    <AvatarImage avatar={p.avatar} className="w-8 h-8 flex-shrink-0" />
+                    <div className="flex-1 font-semibold text-sm truncate">{p.name}</div>
+                    <div className="font-black text-base text-brand-300">{p.total_score.toLocaleString()}</div>
+                  </div>
+                ))}
+                {players.length === 0 && (
+                  <p className="text-gray-500 text-center py-16 text-sm">No scores yet</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
+      ) : (
+        /* Final results - Original Centered Showcase */
+        <>
+          {isFinal && players.length > 0 && (
+            <div className="flex justify-center items-end gap-3 sm:gap-6 mb-12 mt-6 h-96">
+              {podiumOrder.map((pos) => {
+                const p = podiumPlayers[pos.index]
+
+                // Only render podium columns if there are players to go in them
+                if (!p && pos.index >= players.length) return null
+
+                // Suspense reveal steps filtering
+                if (pos.place === 3 && revealStep < 1) return <div key={pos.place} className="w-24 sm:w-36 flex flex-col items-center justify-end h-full" />
+                if (pos.place === 2 && revealStep < 2) return <div key={pos.place} className="w-24 sm:w-36 flex flex-col items-center justify-end h-full" />
+                if (pos.place === 1 && revealStep < 3) return <div key={pos.place} className="w-24 sm:w-36 flex flex-col items-center justify-end h-full" />
+
+                return (
+                  <div key={pos.place} className="flex flex-col items-center justify-end h-full animate-podium-rise" style={{ animationDelay: pos.delay }}>
+                    {p && (
+                      <>
+                        {/* Name Badge */}
+                        <div className="bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/5 font-extrabold text-sm text-white mb-2 shadow-lg select-none truncate max-w-[100px] sm:max-w-[140px]">
+                          {p.name}
+                        </div>
+
+                        {/* Overlapping Avatar */}
+                        <div className={`w-20 h-20 rounded-full flex items-center justify-center bg-white/10 border ${pos.border} shadow-2xl relative z-10 translate-y-7`}>
+                          <AvatarImage avatar={p.avatar} className="w-17 h-17" />
+                          <span className="absolute -top-3 right-0 text-xl leading-none">{pos.icon}</span>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Column block */}
+                    <div
+                      className={`w-24 sm:w-36 rounded-t-2xl border ${pos.border} ${pos.bg} ${pos.shadow} ${pos.height} flex flex-col items-center justify-center pt-8 pb-4`}
+                    >
+                      {p ? (
+                        <>
+                          <span className={`text-5xl sm:text-6xl font-black ${pos.text} opacity-80 leading-none mb-2 select-none`}>
+                            {pos.place}
+                          </span>
+                          <span className="text-xs sm:text-sm font-extrabold text-white/90 tracking-wide select-none">
+                            {p.total_score.toLocaleString()} pts
+                          </span>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Leaderboard or Runner-ups List */}
+          {revealStep >= 4 && (
+            <div className="animate-fade-in">
+              {runnerUpPlayers.length > 0 && (
+                <h3 className="text-lg font-bold text-gray-400 mb-3 select-none">Runner-ups</h3>
+              )}
+
+              <div className="space-y-3 mb-8">
+                {runnerUpPlayers.map((p, i) => {
+                  const actualIndex = i + 3
+                  return (
+                    <div
+                      key={p.name}
+                      className={`glass-card px-5 py-4 flex items-center gap-4 animate-slide-up ${actualIndex < 3 ? 'ring-1 ring-yellow-500/20' : ''}`}
+                      style={{ animationDelay: `${i * 50}ms` }}
+                    >
+                      <div className="text-2xl w-8 text-center">
+                        {actualIndex < 3 ? RANK_STYLES[actualIndex] : <span className="text-gray-500 text-lg font-bold">#{actualIndex + 1}</span>}
+                      </div>
+                      <AvatarImage avatar={p.avatar} className="w-10 h-10" />
+                      <div className="flex-1 font-semibold">{p.name}</div>
+                      <div className="font-black text-xl text-brand-300">{p.total_score.toLocaleString()}</div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
 
