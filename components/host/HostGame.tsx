@@ -477,9 +477,24 @@ function LeaderboardView({
   loading: boolean
 }) {
   const RANK_STYLES = ['🥇', '🥈', '🥉']
-  const OPTION_LABELS = ['A', 'B', 'C', 'D']
+  const OPTION_LABELS = ['A', 'B', 'C', 'D'] as const
 
   const [revealStep, setRevealStep] = useState(0)
+  const [animatedHeights, setAnimatedHeights] = useState<{ [key: string]: number }>({ A: 0, B: 0, C: 0, D: 0 })
+
+  useEffect(() => {
+    if (!questionResults) return
+    const maxCount = Math.max(...OPTION_LABELS.map(l => questionResults.distribution?.[l] ?? 0), 1)
+    const timer = setTimeout(() => {
+      setAnimatedHeights({
+        A: maxCount > 0 ? ((questionResults.distribution?.A ?? 0) / maxCount) * 100 : 0,
+        B: maxCount > 0 ? ((questionResults.distribution?.B ?? 0) / maxCount) * 100 : 0,
+        C: maxCount > 0 ? ((questionResults.distribution?.C ?? 0) / maxCount) * 100 : 0,
+        D: maxCount > 0 ? ((questionResults.distribution?.D ?? 0) / maxCount) * 100 : 0,
+      })
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [questionResults])
 
   // Staggered sequential reveals based dynamically on player count to avoid blank delays
   useEffect(() => {
@@ -534,22 +549,127 @@ function LeaderboardView({
       </h2>
       {!isFinal && <p className="text-gray-400 text-center text-sm mb-8">After question {currentQ + 1}</p>}
 
-      {/* Answer distribution */}
+      {/* Kahoot-style Answer distribution bar graph */}
       {questionResults && !isFinal && (
-        <div className="glass-card p-5 mb-6">
-          <p className="text-sm font-medium text-gray-300 mb-3">Answer Distribution</p>
-          <div className="grid grid-cols-4 gap-2">
+        <div className="glass-card p-6 mb-8 text-center animate-fade-in relative shadow-2xl border border-white/10">
+          <div className="flex items-center justify-between mb-6 select-none">
+            <span className="text-lg font-black tracking-wide text-gray-300">📊 Question Results</span>
+            <span className="text-xs font-semibold text-white/40">{questionResults.total_responses || 0} answers</span>
+          </div>
+
+          <div className="h-64 sm:h-72 flex items-end justify-between gap-3 sm:gap-6 px-2 mb-4 border-b border-white/10 pb-2 relative">
             {OPTION_LABELS.map((letter) => {
               const count = questionResults.distribution?.[letter] ?? 0
               const total = questionResults.total_responses || 1
               const pct = Math.round((count / total) * 100)
               const isCorrect = letter === questionResults.correct_option
+
+              // Define styling configurations for each option
+              const optionConfig = {
+                A: {
+                  bg: 'bg-gradient-to-t from-red-600 to-red-500',
+                  glow: 'shadow-red-500/10 hover:shadow-red-500/30',
+                },
+                B: {
+                  bg: 'bg-gradient-to-t from-blue-600 to-blue-500',
+                  glow: 'shadow-blue-500/10 hover:shadow-blue-500/30',
+                },
+                C: {
+                  bg: 'bg-gradient-to-t from-yellow-500 to-yellow-400',
+                  glow: 'shadow-yellow-500/10 hover:shadow-yellow-500/30',
+                },
+                D: {
+                  bg: 'bg-gradient-to-t from-green-600 to-green-500',
+                  glow: 'shadow-green-500/10 hover:shadow-green-500/30',
+                },
+              }[letter]
+
+              const heightVal = animatedHeights[letter]
+
               return (
-                <div key={letter} className={`rounded-lg p-3 text-center ${isCorrect ? 'bg-green-500/20 border border-green-500/40' : 'bg-white/5'}`}>
-                  <div className={`text-lg font-bold ${isCorrect ? 'text-green-400' : 'text-gray-300'}`}>{letter}</div>
-                  <div className="text-xl font-black">{count}</div>
-                  <div className="text-xs text-gray-400">{pct}%</div>
-                  {isCorrect && <div className="text-xs text-green-400 mt-1">✓ correct</div>}
+                <div
+                  key={letter}
+                  className={`flex-1 flex flex-col items-center justify-end h-full transition-all duration-500 ${
+                    isCorrect ? 'opacity-100' : 'opacity-40 hover:opacity-60'
+                  }`}
+                >
+                  {/* Answer count & bouncy checkmark badge */}
+                  <div className="flex flex-col items-center mb-2 z-10 select-none">
+                    {isCorrect && (
+                      <div className="bg-green-500 text-white rounded-full p-1.5 shadow-lg shadow-green-500/30 animate-bounce mb-1">
+                        <svg className="w-3.5 h-3.5 stroke-[3.5px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                    <span className="text-white font-extrabold text-base sm:text-xl drop-shadow-md">
+                      {count}
+                    </span>
+                  </div>
+
+                  {/* Vertical column bar */}
+                  <div
+                    className={`w-full ${optionConfig.bg} rounded-t-xl border-t border-white/20 shadow-lg ${optionConfig.glow} transition-[height] duration-1000 cubic-bezier(0.25, 1, 0.5, 1) flex flex-col items-center justify-end relative overflow-hidden`}
+                    style={{ height: `${Math.max(heightVal, 6)}%` }}
+                  >
+                    {/* Inner highlight for premium visual depth */}
+                    <div className="absolute inset-0 bg-white/[0.05] rounded-t-[10px]" />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Option footers (geometric accessibility shapes & letters) */}
+          <div className="grid grid-cols-4 gap-3 sm:gap-6 px-2 mt-3 select-none">
+            {OPTION_LABELS.map((letter) => {
+              const total = questionResults.total_responses || 1
+              const count = questionResults.distribution?.[letter] ?? 0
+              const pct = Math.round((count / total) * 100)
+              const isCorrect = letter === questionResults.correct_option
+
+              const optionConfig = {
+                A: {
+                  shapeBg: 'bg-red-600',
+                  shape: (
+                    <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
+                      <path d="M12 3L2 21H22L12 3Z" />
+                    </svg>
+                  ),
+                },
+                B: {
+                  shapeBg: 'bg-blue-600',
+                  shape: (
+                    <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
+                      <path d="M12 2L2 12L12 22L22 12L12 2Z" />
+                    </svg>
+                  ),
+                },
+                C: {
+                  shapeBg: 'bg-yellow-500',
+                  shape: (
+                    <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" />
+                    </svg>
+                  ),
+                },
+                D: {
+                  shapeBg: 'bg-green-600',
+                  shape: (
+                    <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                    </svg>
+                  ),
+                },
+              }[letter]
+
+              return (
+                <div key={letter} className={`flex flex-col items-center transition-opacity duration-500 ${isCorrect ? 'opacity-100' : 'opacity-40'}`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white ${optionConfig.shapeBg} shadow-md`}>
+                    {optionConfig.shape}
+                  </div>
+                  <span className="text-xs sm:text-sm font-black text-gray-200 mt-1">{letter}</span>
+                  <span className="text-[10px] sm:text-xs text-gray-400 font-bold leading-none">{pct}%</span>
                 </div>
               )
             })}
