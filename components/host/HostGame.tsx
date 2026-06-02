@@ -264,7 +264,7 @@ function LobbyView({
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 animate-fade-in flex flex-col min-h-[85vh] justify-center">
+    <div className="max-w-7xl mx-auto px-4 py-8 animate-fade-in flex flex-col min-h-[85vh] justify-center">
       {/* Title */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-black text-white mb-2">VibeQuiz Lobby</h1>
@@ -329,7 +329,7 @@ function LobbyView({
               <span className="text-3xl font-extrabold text-brand-400 animate-pulse">{players.length}</span>
             </div>
 
-            <div className="flex flex-wrap gap-2.5 max-h-[320px] overflow-y-auto pr-1">
+            <div className="flex flex-wrap gap-2.5 max-h-[500px] overflow-y-auto pr-1">
               {players.map((p) => (
                 <div key={p.playerId} className="flex items-center gap-2.5 bg-white/5 border border-white/10 rounded-full pl-2 pr-4 py-2 text-sm hover:border-white/20 transition-all select-none animate-bounce-in">
                   <AvatarImage avatar={p.avatar} className="w-6 h-6" />
@@ -396,7 +396,7 @@ function QuestionView({
   const barColor = pct > 50 ? 'bg-green-500' : pct > 20 ? 'bg-yellow-400' : 'bg-red-500'
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-10 animate-fade-in">
+    <div className="max-w-5xl mx-auto px-4 py-10 animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <span className="text-gray-400 text-sm">Question {questionNumber} / {total}</span>
         <span className={`text-2xl font-black tabular-nums ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
@@ -554,7 +554,7 @@ function LeaderboardView({
   ]
 
   return (
-    <div className={`mx-auto px-4 py-10 animate-fade-in ${isFinal ? 'max-w-4xl' : 'max-w-7xl'}`}>
+    <div className={`mx-auto px-4 py-10 animate-fade-in ${isFinal ? 'max-w-6xl' : 'max-w-7xl'}`}>
       {/* Header with Title and Next Button */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 border-b border-white/5 pb-6">
         <div>
