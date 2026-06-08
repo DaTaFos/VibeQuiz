@@ -26,28 +26,28 @@ echo "=========================================================="
 
 # --- 1. Gather Inputs ---
 echo ""
-read -p "🌐 Enter your Domain Name (e.g. 104-207-64-199.sslip.io or soketi.domain.com): " DOMAIN
+read -p "🌐 Enter your Domain Name (e.g. 104-207-64-199.sslip.io or soketi.domain.com): " DOMAIN < /dev/tty
 if [ -z "$DOMAIN" ]; then
   echo "❌ Error: Domain Name is required."
   exit 1
 fi
 
-read -p "📧 Enter your Email Address (for Let's Encrypt SSL alerts): " EMAIL
+read -p "📧 Enter your Email Address (for Let's Encrypt SSL alerts): " EMAIL < /dev/tty
 if [ -z "$EMAIL" ]; then
   echo "❌ Error: Email is required."
   exit 1
 fi
 
-read -p "🔑 Enter Soketi App Key [default: app-key]: " APP_KEY
+read -p "🔑 Enter Soketi App Key [default: app-key]: " APP_KEY < /dev/tty
 APP_KEY=${APP_KEY:-app-key}
 
-read -p "🔐 Enter Soketi App Secret [default: app-secret]: " APP_SECRET
+read -p "🔐 Enter Soketi App Secret [default: app-secret]: " APP_SECRET < /dev/tty
 APP_SECRET=${APP_SECRET:-app-secret}
 
-read -p "🆔 Enter Soketi App ID [default: app-id]: " APP_ID
+read -p "🆔 Enter Soketi App ID [default: app-id]: " APP_ID < /dev/tty
 APP_ID=${APP_ID:-app-id}
 
-read -p "👥 Enter Maximum Presence Members Limit [default: 1000]: " MAX_MEMBERS
+read -p "👥 Enter Maximum Presence Members Limit [default: 1000]: " MAX_MEMBERS < /dev/tty
 MAX_MEMBERS=${MAX_MEMBERS:-1000}
 
 echo ""
@@ -60,7 +60,7 @@ echo "   App Key:     $APP_KEY"
 echo "   App Secret:  [HIDDEN]"
 echo "   Max Members: $MAX_MEMBERS"
 echo "--------------------------------------------------"
-read -p "👉 Proceed with installation? (y/n): " CONFIRM
+read -p "👉 Proceed with installation? (y/n): " CONFIRM < /dev/tty
 if [ "$CONFIRM" != "y" ] && [ "$CONFIRM" != "Y" ]; then
   echo "❌ Installation cancelled."
   exit 0
