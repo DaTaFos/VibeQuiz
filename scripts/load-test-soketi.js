@@ -21,74 +21,6 @@ const crypto = require('crypto');
 const WebSocket = require('ws');
 const { createClient } = require('@supabase/supabase-js');
 
-let appUrl = 'http://localhost:3000';
-
-function postPlayerAnswered(roomCode, playerId, retries = 3, delay = 1000) {
-  return new Promise((resolve) => {
-    const attempt = (remainingRetries) => {
-      try {
-        const payload = JSON.stringify({
-          roomCode,
-          payload: {
-            type: 'PLAYER_ANSWERED',
-            playerId
-          }
-        });
-
-        const parsedUrl = new URL('/api/broadcast', appUrl);
-        const isHttps = parsedUrl.protocol === 'https:';
-        const client = isHttps ? require('https') : require('http');
-
-        const req = client.request({
-          hostname: parsedUrl.hostname,
-          port: parsedUrl.port || (isHttps ? 443 : 80),
-          path: parsedUrl.pathname + parsedUrl.search,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(payload)
-          }
-        }, (res) => {
-          let body = '';
-          res.on('data', (chunk) => { body += chunk; });
-          res.on('end', () => {
-            if (res.statusCode === 200) {
-              resolve(true);
-            } else {
-              if (remainingRetries > 0) {
-                setTimeout(() => attempt(remainingRetries - 1), delay);
-              } else {
-                console.error(`  [postPlayerAnswered Error] Server returned status ${res.statusCode} for ${parsedUrl.href}: ${body}`);
-                resolve(false);
-              }
-            }
-          });
-        });
-
-        req.on('error', (err) => {
-          if (remainingRetries > 0) {
-            setTimeout(() => attempt(remainingRetries - 1), delay);
-          } else {
-            console.error(`  [postPlayerAnswered Error] Failed to connect to ${parsedUrl.href}: ${err.message}`);
-            resolve(false);
-          }
-        });
-
-        req.write(payload);
-        req.end();
-      } catch (_) {
-        if (remainingRetries > 0) {
-          setTimeout(() => attempt(remainingRetries - 1), delay);
-        } else {
-          resolve(false);
-        }
-      }
-    };
-
-    attempt(retries);
-  });
-}
-
 // ---------------------------------------------------------------------------
 // 1. Parse .env.local
 // ---------------------------------------------------------------------------
@@ -303,8 +235,12 @@ async function handleNextQuestion(player, q) {
 
       if (error || !data?.success) throw new Error(error?.message || data?.error || 'Submit error');
 
-      // Trigger the real-time answered count broadcast using bulletproof native POST
-      await postPlayerAnswered(ROOM_CODE, player.playerId);
+      // Trigger the real-time answered count broadcast using client event directly over WebSocket
+      player.ws.send(JSON.stringify({
+        event: 'client-PLAYER_ANSWERED',
+        channel: `presence-room-${ROOM_CODE}`,
+        data: JSON.stringify({ playerId: player.playerId })
+      }));
 
       if (player.playerNum === 1 || player.playerNum % 50 === 0) {
         console.log(`[Player ${player.playerNum}/300] ⚡ Answered: ${selectedOption} in ${responseTimeMs}ms (Points: ${data.points}, Correct: ${data.is_correct})`);
@@ -350,7 +286,6 @@ function handleGameEnded(player, payload) {
 // ---------------------------------------------------------------------------
 async function runGameLoopSimulation() {
   const env = loadEnv();
-  appUrl = env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   const pusherKey = env.NEXT_PUBLIC_PUSHER_KEY || 'app-key';

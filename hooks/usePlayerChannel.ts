@@ -81,22 +81,14 @@ export function usePlayerChannel(
     }
   }, [roomCode, playerId, playerName, playerAvatar]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const triggerAnswered = useCallback(async () => {
+  const triggerAnswered = useCallback(() => {
     if (!roomCode || !playerId) return
-    try {
-      await fetch('/api/broadcast', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          roomCode,
-          payload: {
-            type: 'PLAYER_ANSWERED',
-            playerId
-          }
-        }),
-      })
-    } catch (error) {
-      console.error('Failed to trigger player answered via API:', error)
+    // Send directly over the existing WebSocket — no HTTP round-trip.
+    // Soketi/Pusher client events are prefixed with "client-" and are
+    // forwarded to all other subscribers on the same presence channel.
+    const channel = channelRef.current as any
+    if (channel?.trigger) {
+      channel.trigger('client-PLAYER_ANSWERED', { playerId })
     }
   }, [roomCode, playerId])
 

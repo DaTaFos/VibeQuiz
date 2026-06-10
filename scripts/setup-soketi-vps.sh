@@ -93,6 +93,7 @@ docker run -p 6001:6001 -d \
   -e SOKETI_DEFAULT_APP_ID="$APP_ID" \
   -e SOKETI_DEFAULT_APP_KEY="$APP_KEY" \
   -e SOKETI_DEFAULT_APP_SECRET="$APP_SECRET" \
+  -e SOKETI_DEFAULT_APP_ENABLE_CLIENT_MESSAGES=true \
   --log-opt max-size=10m \
   --log-opt max-file=3 \
   quay.io/soketi/soketi:1.6-16-alpine

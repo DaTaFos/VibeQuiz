@@ -62,7 +62,7 @@ export function usePresence(
       updatePlayersList()
     })
 
-    channel.bind('PLAYER_ANSWERED', (data: { playerId: string }) => {
+    channel.bind('client-PLAYER_ANSWERED', (data: { playerId: string }) => {
       onPlayerAnsweredRef.current?.(data.playerId)
     })
 
