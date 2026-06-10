@@ -360,6 +360,7 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
   if (phase === 'leaderboard') {
     const RANK = ['🥇', '🥈', '🥉']
     const myEntry = leaderboard.find((p) => p.name === session?.name)
+    const myIndex = leaderboard.findIndex((p) => p.name === session?.name)
 
     return (
       <main className="min-h-screen bg-gray-950 px-4 py-8 animate-fade-in">
@@ -380,6 +381,29 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
               <span className="font-black text-brand-300">{p.total_score.toLocaleString()}</span>
             </div>
           ))}
+
+          {/* Out-of-top-5 player indicator */}
+          {myIndex >= 5 && myEntry && (
+            <>
+              <div className="flex items-center justify-center py-2 select-none">
+                <div className="h-[2px] bg-brand-500/20 w-8 rounded-full" />
+                <span className="text-brand-400 text-xs font-bold px-3 tracking-widest uppercase">You</span>
+                <div className="h-[2px] bg-brand-500/20 w-8 rounded-full" />
+              </div>
+
+              <div
+                key={myEntry.name}
+                className="glass-card px-4 py-3 flex items-center gap-3 ring-1 ring-brand-400 bg-brand-500/5 shadow-lg shadow-brand-500/5 animate-fade-in"
+              >
+                <span className="text-sm font-extrabold text-brand-400 w-7 text-center">
+                  #{myEntry.rank}
+                </span>
+                <AvatarImage avatar={myEntry.avatar} className="w-8 h-8" />
+                <span className="flex-1 font-bold text-white truncate">{myEntry.name}</span>
+                <span className="font-black text-brand-300">{myEntry.total_score.toLocaleString()}</span>
+              </div>
+            </>
+          )}
         </div>
 
         <FullScreenMessage icon="⏳" text="Waiting for next question…" inline />
