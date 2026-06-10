@@ -413,6 +413,7 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
 
   // Finished
   const myFinalEntry = leaderboard.find((p) => p.name === session?.name)
+  const myFinalIndex = leaderboard.findIndex((p) => p.name === session?.name)
   const myRank = myFinalEntry?.rank ?? '-'
 
   return (
@@ -423,18 +424,41 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
         You finished #{myRank} with <span className="text-brand-400 font-bold">{myScore.toLocaleString()}</span> pts
       </p>
 
-      <div className="space-y-3 mb-8">
+      <div className="space-y-3 mb-8 max-w-sm mx-auto">
         {leaderboard.slice(0, 5).map((p, i) => {
           const RANK = ['🥇', '🥈', '🥉']
           return (
             <div key={p.name} className={`glass-card px-4 py-3 flex items-center gap-3 ${p.name === session?.name ? 'ring-1 ring-brand-400' : ''}`}>
               <span className="text-xl w-7 text-center">{i < 3 ? RANK[i] : `#${i + 1}`}</span>
               <AvatarImage avatar={p.avatar} className="w-8 h-8" />
-              <span className="flex-1 font-semibold truncate">{p.name}</span>
+              <span className="flex-1 font-semibold truncate text-left">{p.name}</span>
               <span className="font-black text-brand-300">{p.total_score.toLocaleString()}</span>
             </div>
           )
         })}
+
+        {/* Out-of-top-5 final player indicator */}
+        {myFinalIndex >= 5 && myFinalEntry && (
+          <>
+            <div className="flex items-center justify-center py-2 select-none">
+              <div className="h-[2px] bg-brand-500/20 w-8 rounded-full" />
+              <span className="text-brand-400 text-xs font-bold px-3 tracking-widest uppercase">You</span>
+              <div className="h-[2px] bg-brand-500/20 w-8 rounded-full" />
+            </div>
+
+            <div
+              key={myFinalEntry.name}
+              className="glass-card px-4 py-3 flex items-center gap-3 ring-1 ring-brand-400 bg-brand-500/5 shadow-lg shadow-brand-500/5 animate-fade-in"
+            >
+              <span className="text-sm font-extrabold text-brand-400 w-7 text-center">
+                #{myFinalEntry.rank}
+              </span>
+              <AvatarImage avatar={myFinalEntry.avatar} className="w-8 h-8" />
+              <span className="flex-1 font-bold text-white truncate text-left">{myFinalEntry.name}</span>
+              <span className="font-black text-brand-300">{myFinalEntry.total_score.toLocaleString()}</span>
+            </div>
+          </>
+        )}
       </div>
 
       <a href="/play" className="btn-primary inline-block" onClick={() => clearPlayerSession(roomCode)}>
