@@ -224,17 +224,36 @@ async function handleNextQuestion(player, q) {
       q.timeLimitSeconds * 1000
     );
 
-    try {
-      const { data, error } = await player.client.rpc('submit_answer', {
-        p_room_code: ROOM_CODE,
-        p_player_id: player.playerId,
-        p_question_id: q.questionId,
-        p_selected_option: selectedOption,
-        p_response_time_ms: responseTimeMs
-      });
+    let success = false;
+    let retries = 3;
+    let lastError = null;
+    let data = null;
 
-      if (error || !data?.success) throw new Error(error?.message || data?.error || 'Submit error');
+    while (retries > 0 && !success) {
+      try {
+        const res = await player.client.rpc('submit_answer', {
+          p_room_code: ROOM_CODE,
+          p_player_id: player.playerId,
+          p_question_id: q.questionId,
+          p_selected_option: selectedOption,
+          p_response_time_ms: responseTimeMs
+        });
+        if (res.error || !res.data?.success) {
+          throw new Error(res.error?.message || res.data?.error || 'Submit error');
+        }
+        data = res.data;
+        success = true;
+      } catch (err) {
+        lastError = err;
+        retries--;
+        if (retries > 0) {
+          // Wait random delay between 500ms and 1500ms before retrying
+          await new Promise((resolve) => setTimeout(resolve, Math.floor(Math.random() * 1000 + 500)));
+        }
+      }
+    }
 
+    if (success) {
       // Trigger the real-time answered count broadcast using client event directly over WebSocket
       player.ws.send(JSON.stringify({
         event: 'client-PLAYER_ANSWERED',
@@ -245,8 +264,8 @@ async function handleNextQuestion(player, q) {
       if (player.playerNum === 1 || player.playerNum % 50 === 0) {
         console.log(`[Player ${player.playerNum}/300] ⚡ Answered: ${selectedOption} in ${responseTimeMs}ms (Points: ${data.points}, Correct: ${data.is_correct})`);
       }
-    } catch (err) {
-      console.error(`[Player ${player.playerNum}/300] ❌ Answer failed:`, err.message);
+    } else {
+      console.error(`[Player ${player.playerNum}/300] ❌ Answer failed after retries:`, lastError?.message);
     }
   }, thinkTimeMs);
 }
@@ -345,8 +364,8 @@ async function runGameLoopSimulation() {
   // --- Step 2: Connect raw WebSockets ---
   console.log('\n📡 Step 2: Connecting simulated players to Soketi WebSocket server...');
 
-  // 400 players × 30ms stagger = last player starts at ~12s; 40s gives ample headroom.
-  const SOCKET_TIMEOUT_MS = 40000;
+  // 400 players × 100ms stagger = last player starts at ~40s; 60s gives ample headroom.
+  const SOCKET_TIMEOUT_MS = 60000;
   const channelName = `presence-room-${ROOM_CODE}`;
 
   let successCount = 0;
@@ -365,7 +384,7 @@ async function runGameLoopSimulation() {
         });
         if (ok) successCount++; else failCount++;
         resolve();
-      }, index * 30);
+      }, index * 100);
     })
   );
 
