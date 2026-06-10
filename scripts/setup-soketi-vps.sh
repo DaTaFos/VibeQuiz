@@ -88,6 +88,7 @@ docker rm soketi-server &> /dev/null || true
 docker run -p 6001:6001 -d \
   --restart unless-stopped \
   --name soketi-server \
+  --ulimit nofile=65535:65535 \
   -e SOKETI_DEBUG=0 \
   -e SOKETI_PRESENCE_MAX_MEMBERS="$MAX_MEMBERS" \
   -e SOKETI_DEFAULT_APP_ID="$APP_ID" \
@@ -122,6 +123,13 @@ server {
     }
 }
 EOF
+
+# Optimize Nginx worker connections and file limits
+echo "⚙️ Optimizing Nginx worker limits..."
+sed -i 's/worker_connections.*/worker_connections 10240;/' /etc/nginx/nginx.conf
+if ! grep -q "worker_rlimit_nofile" /etc/nginx/nginx.conf; then
+  sed -i '/events {/i worker_rlimit_nofile 20480;' /etc/nginx/nginx.conf
+fi
 
 # Activate site, remove default, and test configuration
 ln -sf /etc/nginx/sites-available/soketi /etc/nginx/sites-enabled/
