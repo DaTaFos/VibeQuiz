@@ -252,7 +252,7 @@ function LobbyView({
 
   const joinUrl = origin ? `${origin}/play?code=${room.room_code}` : ''
   const qrCodeUrl = joinUrl
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(joinUrl)}&color=6366f1&bgcolor=ffffff&qzone=2`
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=450x450&data=${encodeURIComponent(joinUrl)}&color=6366f1&bgcolor=ffffff&qzone=2`
     : ''
 
   const handleCopyLink = () => {
@@ -264,21 +264,21 @@ function LobbyView({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 animate-fade-in flex flex-col min-h-[85vh] justify-center">
+    <div className="max-w-7xl mx-auto px-4 h-[calc(100dvh-73px)] flex flex-col justify-between py-4 overflow-hidden animate-fade-in select-none">
       {/* Title */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-black text-white mb-2">VibeQuiz Lobby</h1>
+      <div className="text-center mb-4 flex-shrink-0">
+        <h1 className="text-3xl font-black text-white mb-1">VibeQuiz Lobby</h1>
         <p className="text-gray-400 text-sm">Players are arriving... get ready to battle!</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-stretch mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch mb-4 flex-1 min-h-0">
         {/* LEFT COLUMN: JOIN INFORMATION & QR CODE */}
-        <div className="md:col-span-7 flex flex-col justify-between glass-card p-8 relative overflow-hidden select-none">
+        <div className="md:col-span-7 flex flex-col justify-between glass-card p-6 md:p-8 relative overflow-hidden select-none">
           <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="flex flex-col items-center justify-center text-center flex-1 py-6">
+          <div className="flex flex-col items-center justify-center text-center flex-1 py-4">
             <span className="text-xs font-black tracking-widest text-brand-400 uppercase mb-2">Room Code</span>
-            <div className="text-7xl md:text-8xl font-black tracking-[0.15em] pl-[0.15em] bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent animate-pulse-glow">
+            <div className="text-6xl md:text-8xl font-black tracking-[0.15em] pl-[0.15em] bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent animate-pulse-glow">
               {room.room_code}
             </div>
             <p className="text-gray-400 text-xs mt-2 uppercase tracking-wider font-semibold">
@@ -286,25 +286,24 @@ function LobbyView({
             </p>
           </div>
 
-
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-white/[0.02] border border-white/5 rounded-2xl p-6 mt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-white/[0.02] border border-white/5 rounded-2xl p-6 md:p-8 mt-4">
             <div className="flex-1 text-center sm:text-left">
-              <h3 className="font-bold text-white text-lg mb-1">⚡ Scan to Join</h3>
-              <p className="text-gray-400 text-sm leading-relaxed mb-4">
+              <h3 className="font-bold text-white text-lg md:text-xl mb-1.5">⚡ Scan to Join</h3>
+              <p className="text-gray-300 text-sm md:text-base leading-relaxed mb-5">
                 Scan the QR code with your mobile device to join instantly with the room code auto-filled!
               </p>
 
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="btn-secondary text-xs px-4 py-2 flex items-center gap-1.5 active:scale-95 transition-all select-none"
+                className="btn-secondary text-sm px-5 py-2.5 flex items-center gap-1.5 active:scale-95 transition-all select-none"
               >
                 <span>{copied ? '✅ Copied!' : '🔗 Copy Join Link'}</span>
               </button>
             </div>
 
             {/* Premium QR Code Image Container */}
-            <div className="w-40 h-40 bg-white p-3 rounded-2xl flex items-center justify-center shadow-2xl relative group overflow-hidden border border-white/10 shrink-0 select-none animate-bounce-in">
+            <div className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 bg-white p-3 rounded-2xl flex items-center justify-center shadow-2xl relative group overflow-hidden border border-white/10 shrink-0 select-none animate-bounce-in">
               {qrCodeUrl ? (
                 <img
                   src={qrCodeUrl}
@@ -320,16 +319,16 @@ function LobbyView({
         </div>
 
         {/* RIGHT COLUMN: PLAYERS JOINED LIST */}
-        <div className="md:col-span-5 glass-card p-8 flex flex-col justify-between select-none relative overflow-hidden">
+        <div className="md:col-span-5 glass-card p-6 md:p-8 flex flex-col justify-between select-none relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
 
-          <div>
-            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4 flex-shrink-0">
               <h2 className="font-black text-xl text-white tracking-wide">Players</h2>
               <span className="text-3xl font-extrabold text-brand-400 animate-pulse">{players.length}</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 overflow-y-auto pr-1 flex-1 min-h-0">
               {players.map((p) => (
                 <div key={p.playerId} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm hover:border-white/20 transition-all select-none animate-bounce-in">
                   <AvatarImage avatar={p.avatar} className="w-8 h-8 flex-shrink-0" />
@@ -346,7 +345,7 @@ function LobbyView({
             </div>
           </div>
 
-          <div className="mt-8 pt-4 border-t border-white/10 flex items-center justify-between text-xs text-gray-500 font-semibold">
+          <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between text-xs text-gray-500 font-semibold flex-shrink-0">
             <span>Room Status: Lobby</span>
             <span>{questionCount} Questions</span>
           </div>
@@ -354,7 +353,7 @@ function LobbyView({
       </div>
 
       {/* START ACTION PANEL */}
-      <div className="glass-card p-6 flex flex-col sm:flex-row items-center justify-between gap-4 select-none">
+      <div className="glass-card p-4 md:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 select-none flex-shrink-0 mt-auto">
         <div className="text-center sm:text-left">
           <span className="text-xs text-gray-500 uppercase tracking-widest font-black">Host Controls</span>
           <h2 className="text-white font-bold text-lg">Ready to launch?</h2>
@@ -364,7 +363,7 @@ function LobbyView({
           <button
             onClick={onStart}
             disabled={loading || players.length === 0}
-            className="btn-primary text-lg px-12 py-4 w-full sm:w-auto font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg hover:shadow-brand-500/25"
+            className="btn-primary text-lg px-12 py-3.5 w-full sm:w-auto font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg hover:shadow-brand-500/25"
             id="start-game-btn"
           >
             {loading ? 'Starting…' : '🚀 Start Game'}
