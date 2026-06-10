@@ -48,7 +48,26 @@ begin
     return jsonb_build_object('success', false, 'error', 'QUIZ_NOT_FOUND');
   end if;
 
-  -- Close any existing active rooms for this host (one game at a time)
+  -- If a lobby room already exists for this exact quiz, reuse it.
+  -- This prevents the host refreshing the page from killing the code
+  -- that players already have in their hands.
+  select id, room_code into v_room_id, v_code
+  from rooms
+  where host_id = v_host_id
+    and quiz_id  = p_quiz_id
+    and status   = 'lobby'
+  limit 1;
+
+  if found then
+    return jsonb_build_object(
+      'success',   true,
+      'room_id',   v_room_id,
+      'room_code', v_code
+    );
+  end if;
+
+  -- No existing lobby for this quiz — close any stale lobby/active rooms for
+  -- OTHER quizzes (host can only run one game at a time), then create a new one.
   update rooms
   set status = 'finished', ended_at = now()
   where host_id = v_host_id and status in ('lobby', 'active');
