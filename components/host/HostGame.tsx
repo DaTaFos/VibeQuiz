@@ -329,15 +329,15 @@ function LobbyView({
               <span className="text-3xl font-extrabold text-brand-400 animate-pulse">{players.length}</span>
             </div>
 
-            <div className="flex flex-wrap gap-2.5 max-h-[500px] overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
               {players.map((p) => (
-                <div key={p.playerId} className="flex items-center gap-2.5 bg-white/5 border border-white/10 rounded-full pl-2 pr-4 py-2 text-sm hover:border-white/20 transition-all select-none animate-bounce-in">
-                  <AvatarImage avatar={p.avatar} className="w-6 h-6" />
-                  <span className="font-semibold text-gray-200">{p.name}</span>
+                <div key={p.playerId} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm hover:border-white/20 transition-all select-none animate-bounce-in">
+                  <AvatarImage avatar={p.avatar} className="w-8 h-8 flex-shrink-0" />
+                  <span className="font-semibold text-gray-200 truncate flex-1">{p.name}</span>
                 </div>
               ))}
               {players.length === 0 && (
-                <div className="w-full py-16 flex flex-col items-center justify-center text-center text-gray-500">
+                <div className="col-span-full py-16 flex flex-col items-center justify-center text-center text-gray-500">
                   <span className="text-4xl mb-3 animate-bounce">⏳</span>
                   <p className="text-sm font-semibold">Waiting for players to join…</p>
                   <p className="text-xs text-gray-600 mt-1">Ready to sync in real-time</p>
@@ -396,63 +396,70 @@ function QuestionView({
   const barColor = pct > 50 ? 'bg-green-500' : pct > 20 ? 'bg-yellow-400' : 'bg-red-500'
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10 animate-fade-in">
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-gray-400 text-sm">Question {questionNumber} / {total}</span>
-        <span className={`text-2xl font-black tabular-nums ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
-          {timeLeft}s
-        </span>
-      </div>
+    <div className="max-w-5xl mx-auto px-4 h-[calc(100dvh-73px)] flex flex-col justify-between py-4 overflow-hidden animate-fade-in select-none">
+      {/* Header Info */}
+      <div className="flex-shrink-0">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-gray-400 text-sm">Question {questionNumber} / {total}</span>
+          <span className={`text-2xl font-black tabular-nums ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
+            {timeLeft}s
+          </span>
+        </div>
 
-      {/* Timer bar */}
-      <div className="h-2 bg-white/10 rounded-full mb-8 overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-1000 ${barColor}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-
-      {/* Question Image (Optional) */}
-      {question.image_url && (
-        <div className="relative mb-6 rounded-2xl overflow-hidden border border-white/10 glass-card p-2 flex justify-center items-center shadow-2xl">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={question.image_url}
-            alt="Question"
-            className="max-h-72 w-full object-contain rounded-xl"
+        {/* Timer bar */}
+        <div className="h-2 bg-white/10 rounded-full mb-4 overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-1000 ${barColor}`}
+            style={{ width: `${pct}%` }}
           />
         </div>
-      )}
-
-      <div className="glass-card p-8 mb-8 text-center">
-        <p className="text-2xl font-bold leading-snug">{question.text}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-8 opacity-60">
+      {/* Main Content Area (Image & Question) */}
+      <div className="w-full flex-1 flex flex-col justify-center min-h-0 mb-4 gap-4">
+        {/* Question Image (Optional) */}
+        {question.image_url && (
+          <div className="relative w-full rounded-2xl overflow-hidden border border-white/10 glass-card p-1.5 flex justify-center items-center shadow-2xl flex-shrink-1 min-h-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={question.image_url}
+              alt="Question"
+              className="max-h-40 md:max-h-56 w-full object-contain rounded-xl"
+            />
+          </div>
+        )}
+
+        <div className="glass-card w-full p-4 md:p-6 text-center flex-shrink-0">
+          <p className="text-xl md:text-2xl font-bold leading-snug">{question.text}</p>
+        </div>
+      </div>
+
+      {/* Answer Options Preview */}
+      <div className="grid grid-cols-2 gap-2.5 mb-4 opacity-60 flex-shrink-0">
         {(['A', 'B', 'C', 'D'] as const).map((letter, i) => {
           const text = [question.option_a, question.option_b, question.option_c, question.option_d][i]
           return (
-            <div key={letter} className={`answer-btn answer-btn-${letter} cursor-default`}>
-              <span className="font-black text-white/70">{letter}</span>
-              <span className="text-sm">{text}</span>
+            <div key={letter} className={`answer-btn answer-btn-${letter} py-2.5 px-4 cursor-default flex items-center gap-3 pointer-events-none transform-none hover:scale-100 active:scale-100 shadow-none`}>
+              <span className="font-black text-white/70 flex-shrink-0">{letter}</span>
+              <span className="text-xs md:text-sm truncate flex-1 text-left">{text}</span>
             </div>
           )
         })}
       </div>
 
       {/* Answered counter: Simple Fraction with Pop Up animation & Spring progress bar */}
-      <div className="glass-card p-6 mb-8 text-center flex flex-col items-center justify-center relative overflow-hidden">
-        <div className="text-sm text-gray-400 font-medium mb-1 z-10 select-none">Players Answered</div>
-        <div className="text-4xl font-extrabold flex items-center gap-2 mb-4 z-10">
-          <span key={answeredCount} className="inline-block animate-pop text-brand-400 text-5xl">
+      <div className="glass-card p-4 mb-4 text-center flex flex-col items-center justify-center relative overflow-hidden flex-shrink-0">
+        <div className="text-xs text-gray-400 font-medium mb-1 z-10 select-none">Players Answered</div>
+        <div className="text-3xl font-extrabold flex items-center gap-2 mb-2 z-10">
+          <span key={answeredCount} className="inline-block animate-pop text-brand-400 text-4xl">
             {answeredCount}
           </span>
-          <span className="text-gray-500">/</span>
-          <span className="text-white text-3xl">{totalPlayers}</span>
+          <span className="text-gray-500 text-xl">/</span>
+          <span className="text-white text-2xl">{totalPlayers}</span>
         </div>
 
         {/* Dynamic Spring-like horizontal progress bar */}
-        <div className="w-full max-w-md h-3 bg-white/10 rounded-full overflow-hidden border border-white/5 p-[2px] z-10 relative">
+        <div className="w-full max-w-md h-2.5 bg-white/10 rounded-full overflow-hidden border border-white/5 p-[1px] z-10 relative">
           <div
             className="h-full rounded-full bg-gradient-to-r from-brand-600 to-brand-400 shadow-[0_0_12px_rgba(41,82,245,0.4)]"
             style={{
@@ -466,7 +473,7 @@ function QuestionView({
       <button
         onClick={onNext}
         disabled={loading}
-        className="btn-primary w-full text-lg py-4"
+        className="btn-primary w-full text-lg py-3 flex-shrink-0 mt-auto"
         id="host-next-btn"
       >
         {loading ? 'Loading results…' : '📊 Show Results'}
@@ -592,7 +599,7 @@ function LeaderboardView({
                   <span className="text-xs font-semibold text-white/40">{questionResults.total_responses || 0} answers</span>
                 </div>
 
-                <div className="h-80 sm:h-[360px] flex items-end justify-between gap-4 sm:gap-8 px-2 mb-4 border-b border-white/10 pb-2 relative flex-1 mt-4">
+                <div className="h-80 sm:h-[360px] grid grid-cols-4 items-end gap-4 sm:gap-6 md:gap-8 px-2 mb-4 border-b border-white/10 pb-2 relative flex-1 mt-4">
                   {OPTION_LABELS.map((letter) => {
                     const count = questionResults.distribution?.[letter] ?? 0
                     const total = questionResults.total_responses || 1
@@ -624,7 +631,7 @@ function LeaderboardView({
                     return (
                       <div
                         key={letter}
-                        className={`flex-1 flex flex-col items-center justify-end h-full transition-all duration-500 ${
+                        className={`flex flex-col items-center justify-end h-full transition-all duration-500 ${
                           isCorrect ? 'opacity-100' : 'opacity-40 hover:opacity-60'
                         }`}
                       >
@@ -656,7 +663,7 @@ function LeaderboardView({
                 </div>
 
                 {/* Option footers (geometric accessibility shapes & letters) */}
-                <div className="grid grid-cols-4 gap-3 sm:gap-6 px-2 select-none">
+                <div className="grid grid-cols-4 gap-4 sm:gap-6 md:gap-8 px-2 select-none">
                   {OPTION_LABELS.map((letter) => {
                     const total = questionResults.total_responses || 1
                     const count = questionResults.distribution?.[letter] ?? 0

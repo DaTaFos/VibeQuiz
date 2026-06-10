@@ -292,16 +292,16 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
     const barColor = pct > 50 ? 'bg-green-500' : pct > 20 ? 'bg-yellow-400' : 'bg-red-500'
 
     return (
-      <main className="min-h-screen bg-gray-950 flex flex-col px-4 py-6">
+      <main className="h-dvh bg-gray-950 flex flex-col px-4 py-4 overflow-hidden select-none">
         {/* Timer */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-1.5 text-sm">
+        <div className="mb-3 flex-shrink-0">
+          <div className="flex items-center justify-between mb-1 text-sm">
             <span className="text-gray-400">Q{q.questionIndex}</span>
             <span className={`font-bold tabular-nums ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
               {timeLeft}s
             </span>
           </div>
-          <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
+          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-1000 ${barColor}`}
               style={{ width: `${pct}%` }}
@@ -311,23 +311,23 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
 
         {/* Question Image (Optional) */}
         {q.imageUrl && (
-          <div className="relative mb-4 rounded-2xl overflow-hidden border border-white/10 glass-card p-1.5 flex justify-center items-center shadow-xl flex-shrink-0">
+          <div className="relative mb-3 rounded-2xl overflow-hidden border border-white/10 glass-card p-1 flex justify-center items-center shadow-xl flex-shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={q.imageUrl}
               alt="Question"
-              className="max-h-48 w-full object-contain rounded-xl"
+              className="max-h-28 md:max-h-40 w-full object-contain rounded-xl"
             />
           </div>
         )}
 
         {/* Question */}
-        <div className="glass-card p-6 mb-6 text-center flex-shrink-0">
-          <p className="text-xl font-bold leading-snug">{q.text}</p>
+        <div className="glass-card p-4 mb-3 text-center flex-shrink-0 flex items-center justify-center">
+          <p className="text-lg md:text-xl font-bold leading-snug">{q.text}</p>
         </div>
 
         {/* Answer buttons */}
-        <div className="grid grid-cols-1 gap-3 flex-1">
+        <div className="grid grid-cols-1 gap-2 flex-1 min-h-0">
           {OPTION_LETTERS.map((letter) => {
             const text = q.options[letter]
             const isSelected = selectedOption === letter
@@ -337,21 +337,21 @@ export default function PlayerGame({ roomCode }: { roomCode: string }) {
                 key={letter}
                 onClick={() => submitAnswer(letter)}
                 disabled={!!selectedOption}
-                className={`answer-btn ${OPTION_CLASSES[letter]}
+                className={`answer-btn ${OPTION_CLASSES[letter]} py-2 md:py-4 px-4 h-full flex items-center gap-3
                   ${isSelected ? 'answer-btn-selected' : ''}
                   ${!selectedOption ? '' : 'cursor-default'}
                 `}
                 id={`answer-${letter}`}
               >
-                <span className="font-black text-xl">{letter}</span>
-                <span className="text-base">{text}</span>
+                <span className="font-black text-xl flex-shrink-0">{letter}</span>
+                <span className="text-sm md:text-base text-left truncate flex-1">{text}</span>
               </button>
             )
           })}
         </div>
 
         {!selectedOption && (
-          <div className="mt-4 text-center text-gray-500 text-sm">Tap an answer</div>
+          <div className="mt-2 text-center text-gray-500 text-xs flex-shrink-0">Tap an answer</div>
         )}
       </main>
     )
