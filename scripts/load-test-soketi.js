@@ -214,7 +214,7 @@ async function handleNextQuestion(player, q) {
     console.log(`  --------------------------------------------\n`);
   }
 
-  const thinkTimeMs = Math.floor(Math.random() * 3000 + 1000);
+  const thinkTimeMs = Math.floor(Math.random() * 8000 + 1000);
 
   setTimeout(async () => {
     const options = ['A', 'B', 'C', 'D'];
@@ -364,9 +364,9 @@ async function runGameLoopSimulation() {
   // --- Step 2: Connect raw WebSockets ---
   console.log('\n📡 Step 2: Connecting simulated players to Soketi WebSocket server...');
 
-  // Set individual socket timeout to 10s. If a connection/subscription takes longer,
+  // Set individual socket timeout to 30s. If a connection/subscription takes longer,
   // we terminate it and retry to recover from transient packet loss or server delay.
-  const SOCKET_TIMEOUT_MS = 10000;
+  const SOCKET_TIMEOUT_MS = 30000;
   const channelName = `presence-room-${ROOM_CODE}`;
 
   let successCount = 0;
@@ -400,7 +400,7 @@ async function runGameLoopSimulation() {
           }
         }
         resolve();
-      }, index * 50);
+      }, index * 150);
     })
   );
 
