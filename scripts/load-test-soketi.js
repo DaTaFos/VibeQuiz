@@ -364,8 +364,9 @@ async function runGameLoopSimulation() {
   // --- Step 2: Connect raw WebSockets ---
   console.log('\n📡 Step 2: Connecting simulated players to Soketi WebSocket server...');
 
-  // 400 players × 100ms stagger = last player starts at ~40s; 60s gives ample headroom.
-  const SOCKET_TIMEOUT_MS = 60000;
+  // Set individual socket timeout to 10s. If a connection/subscription takes longer,
+  // we terminate it and retry to recover from transient packet loss or server delay.
+  const SOCKET_TIMEOUT_MS = 10000;
   const channelName = `presence-room-${ROOM_CODE}`;
 
   let successCount = 0;
@@ -374,17 +375,32 @@ async function runGameLoopSimulation() {
   const connectPromises = players.map((player, index) =>
     new Promise((resolve) => {
       setTimeout(async () => {
-        const ok = await createPusherSocket({
-          wsUrl,
-          pusherKey,
-          pusherSecret,
-          player,
-          channelName,
-          timeoutMs: SOCKET_TIMEOUT_MS
-        });
-        if (ok) successCount++; else failCount++;
+        let connected = false;
+        let retries = 3;
+        while (retries > 0 && !connected) {
+          const ok = await createPusherSocket({
+            wsUrl,
+            pusherKey,
+            pusherSecret,
+            player,
+            channelName,
+            timeoutMs: SOCKET_TIMEOUT_MS
+          });
+          if (ok) {
+            connected = true;
+            successCount++;
+          } else {
+            retries--;
+            if (retries > 0) {
+              console.log(`  [Player ${player.playerNum}] 🔄 Connection/Subscription timed out/failed. Retrying (${3 - retries}/2)...`);
+              await new Promise((r) => setTimeout(r, 1000 + Math.random() * 1500));
+            } else {
+              failCount++;
+            }
+          }
+        }
         resolve();
-      }, index * 100);
+      }, index * 50);
     })
   );
 
